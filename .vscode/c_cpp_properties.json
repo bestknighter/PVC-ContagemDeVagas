@@ -1,0 +1,55 @@
+{
+    "configurations": [
+        {
+            "name": "Mac",
+            "includePath": [
+                "/usr/include",
+                "/usr/local/include"
+            ],
+            "browse": {
+                "limitSymbolsToIncludedHeaders": true,
+                "databaseFilename": "",
+                "path": [
+                    "/usr/include",
+                    "/usr/local/include"
+                ]
+            }
+        },
+        {
+            "name": "Linux",
+            "includePath": [
+                "/usr/include",
+                "/usr/local/include"
+            ],
+            "browse": {
+                "limitSymbolsToIncludedHeaders": true,
+                "databaseFilename": "",
+                "path": [
+                    "/usr/include",
+                    "/usr/local/include"
+                ]
+            }
+        },
+        {
+            "name": "Win32",
+            "includePath": [
+                "./include",
+                "C:/OpenCV/",
+                "C:/OpenCV/build/install/include",
+                "C:/tools/msys64/mingw64/include",
+                "C:/tools/msys64/mingw64/x86_64-w64-mingw32/include"
+            ],
+            "browse": {
+                "limitSymbolsToIncludedHeaders": true,
+                "databaseFilename": "",
+                "path": [
+                    "./include",
+                    "C:/OpenCV/",
+                    "C:/OpenCV/build/install/include",
+                    "C:/tools/msys64/mingw64/include",
+                    "C:/tools/msys64/mingw64/x86_64-w64-mingw32/include"
+                ]
+            }
+        }
+    ]
+}
