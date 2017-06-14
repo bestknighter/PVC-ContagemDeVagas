@@ -3,6 +3,20 @@
 
 using namespace cv;
 
+
+// Começa GLCM (matriz de homogeneidades)
+
+
+
+// Termina GLCM
+
+// Começa Huffman (Transformada de huff (rho theta), mesmo alpha)
+
+
+
+// Termina Huffman
+
+
 int main(int argc, char** argv){
     if(argc < 2){
         printf("Falha ao receber argumentos.\n");
@@ -26,18 +40,31 @@ int main(int argc, char** argv){
     imshow("mag", mag);
     imshow("angle", angle);
 
-    HOGDescriptor hogd;
-    
-    std::vector<Point> descriptor;
-    std::vector<double> weights;
+    // Começa GLCM (matriz de homogeneidades)
 
-    hogd.detect(img, descriptor, weights);
 
-    // Transformada de Ruff (rho theta)
-    // Mesmo alpha
-    // GLCM, matriz de homogeneidades
+
+    // Termina GLCM
+
+    // Começa Huffman (Transformada de huff (rho theta), mesmo alpha)
+
+
+
+    // Termina Huffman
 
     waitKey(0);
 
     return 0;
 }
+
+// Começa GLCM (matriz de homogeneidades)
+
+
+
+// Termina GLCM
+
+// Começa Huffman (Transformada de huff (rho theta), mesmo alpha)
+
+
+
+// Termina Huffman
