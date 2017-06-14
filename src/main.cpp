@@ -61,142 +61,141 @@ int main(int argc, char** argv){
     imshow("angle", angle);
 
     // Começa GLCM (matriz de homogeneidades)
-    float GLCM0[WINDOW_SIZE][WINDOW_SIZE];
-    float GLCM45[WINDOW_SIZE][WINDOW_SIZE];
-    float GLCM90[WINDOW_SIZE][WINDOW_SIZE];
-    float GLCM135[WINDOW_SIZE][WINDOW_SIZE];
+    float features[1];
 
     {
         Mat gray;
         cvtColor(mag, gray, COLOR_BGR2GRAY);
-        Mat window[WINDOW_SIZE][WINDOW_SIZE];
+        Mat window;
+        float GLCM0[WINDOW_SIZE][WINDOW_SIZE];
+        float GLCM45[WINDOW_SIZE][WINDOW_SIZE];
+        float GLCM90[WINDOW_SIZE][WINDOW_SIZE];
+        float GLCM135[WINDOW_SIZE][WINDOW_SIZE];
 
+        window = gray.clone();
         for(int grayX = 0; grayX < gray.rows; grayX += WINDOW_SIZE){ // Faz a janela andar pela imagem
             for(int grayY = 0; grayY < gray.cols; grayY += WINDOW_SIZE){
-                if((gray.rows > (grayX + WINDOW_SIZE)) && (gray.cols > (grayY + WINDOW_SIZE))){ // Trata erro de janela ficar fora da imagem
-                    // Compute 0 degrees
-                    for(int i = 0; i < window.rows - (OFFSET_0.x * DISTANCE); i++){
-                        for(int j = 0; j < window.cols - (OFFSET_0.y * DISTANCE); j++){
-                            //printf("\n");
+                window.adjustROI(grayX, grayY, grayX + WINDOW_SIZE, grayY + WINDOW_SIZE);
+                if(((grayX + WINDOW_SIZE) >= gray.rows) || ((grayY + WINDOW_SIZE) >= gray.cols)){ // Trata erro de janela ficar fora da imagem
+                    continue;
+                }
 
-                            int posY = j + grayY; // Posição real na imagem + deslocamento da janela
-                            int posX = i + grayX;
-
-                            //printf("Posicao real: (%d, %d)\n", posX, posY);
-
-                            int posY2 = posY + (DISTANCE * OFFSET_0.y); // Posição do pixel de comparação
-                            int posX2 = posX + (DISTANCE * OFFSET_0.x);
-
-                            //printf("Posicao real COMPARADO: (%d, %d)\n", posX2, posY2);
-
-                            int value_i = gray.at<unsigned char>(Point(posY, posX)); // Valor do pixel sendo testado
-                            int value_j = gray.at<unsigned char>(Point(posY2, posX2)); // Valor do pixel comparado
-
-                            //printf("Valor do pixel TESTADO: %d - COMPARADO: %d\n", value_i, value_j);
-
-                            int index_i = value_i *  LIMIAR_CINZA/ 256; // Ajuste do valor de pixel para o tamanho da janela (LIMIAR_CINZA tons de cinza)
-                            int index_j = value_j * LIMIAR_CINZA / 256;
-
-                            //printf("Valor do pixel ajustado para %d tons de cinza... TESTADO: %d - COMPARADO: %d\n", LIMIAR_CINZA, index_i, index_j);
-
-                            GLCM0[index_i][index_j]++;
-                            GLCM0[index_j][index_i]++;
-
-                            //printf("\n");
-
-                            //GLCM0[(int) (img.at<unsigned char>(Point(j, i)) * LIMIAR_CINZA / 256)][(int) (img.at<unsigned char>(Point(j + (DISTANCE * OFFSET_0.y), i + (DISTANCE * OFFSET_0.x))) * LIMIAR_CINZA / 256)]++;
-                        }
+                // Compute 0 degrees
+                for(int i = 0; i < window.rows - (OFFSET_0.x * DISTANCE); i++){
+                    for(int j = 0; j < window.cols - (OFFSET_0.y * DISTANCE); j++){
                         //printf("\n");
+
+                        int posY = j + grayY; // Posição real na imagem + deslocamento da janela
+                        int posX = i + grayX;
+
+                        //printf("Posicao real: (%d, %d)\n", posX, posY);
+
+                        int posY2 = posY + (DISTANCE * OFFSET_0.y); // Posição do pixel de comparação
+                        int posX2 = posX + (DISTANCE * OFFSET_0.x);
+
+                        //printf("Posicao real COMPARADO: (%d, %d)\n", posX2, posY2);
+
+                        int value_i = gray.at<unsigned char>(Point(posY, posX)); // Valor do pixel sendo testado
+                        int value_j = gray.at<unsigned char>(Point(posY2, posX2)); // Valor do pixel comparado
+
+                        //printf("Valor do pixel TESTADO: %d - COMPARADO: %d\n", value_i, value_j);
+
+                        int index_i = value_i *  LIMIAR_CINZA/ 256; // Ajuste do valor de pixel para o tamanho da janela (LIMIAR_CINZA tons de cinza)
+                        int index_j = value_j * LIMIAR_CINZA / 256;
+
+                        //printf("Valor do pixel ajustado para %d tons de cinza... TESTADO: %d - COMPARADO: %d\n", LIMIAR_CINZA, index_i, index_j);
+
+                        GLCM0[index_i][index_j]++;
+                        GLCM0[index_j][index_i]++;
+
+                        //printf("\n");
+
+                        //GLCM0[(int) (img.at<unsigned char>(Point(j, i)) * LIMIAR_CINZA / 256)][(int) (img.at<unsigned char>(Point(j + (DISTANCE * OFFSET_0.y), i + (DISTANCE * OFFSET_0.x))) * LIMIAR_CINZA / 256)]++;
                     }
-                    // Normalizar
-                    {
-                        int soma = 0;
-                        for(int i = 0; i < WINDOW_SIZE; i++){
-                            for(int j = 0; j < WINDOW_SIZE; j++){
-                                soma += GLCM0[i][j];
-                            }
+                    //printf("\n");
+                }
+                // Normalizar
+                {
+                    int soma = 0;
+                    for(int i = 0; i < WINDOW_SIZE; i++){
+                        for(int j = 0; j < WINDOW_SIZE; j++){
+                            soma += GLCM0[i][j];
                         }
-                        for(int i = 0; i < WINDOW_SIZE; i++){
-                            for(int j = 0; j < WINDOW_SIZE; j++){
-                                GLCM0[i][j] /= soma;
-                            }
+                    }
+                    for(int i = 0; i < WINDOW_SIZE; i++){
+                        for(int j = 0; j < WINDOW_SIZE; j++){
+                            GLCM0[i][j] /= soma;
+                        }
+                    }
+                }
+            
+                // Compute 45 degrees
+                for(int i = -(OFFSET_45.x * DISTANCE); i < window.rows; i++){
+                    for(int j = 0; j < window.cols - (OFFSET_45.y * DISTANCE); j++){
+                        int index_i = (int) (gray.at<unsigned char>(Point(grayY + j, grayX + i)) * LIMIAR_CINZA / 256);
+                        int index_j = (int) (gray.at<unsigned char>(Point(grayY + j + (DISTANCE * OFFSET_45.y), grayX + i + (DISTANCE * OFFSET_45.x))) * LIMIAR_CINZA / 256);
+                        GLCM45[index_i][index_j]++;
+                        GLCM45[index_j][index_i]++;
+                    }
+                }
+                // Normalizar
+                {
+                    int soma = 0;
+                    for(int i = 0; i < WINDOW_SIZE; i++){
+                        for(int j = 0; j < WINDOW_SIZE; j++){
+                            soma += GLCM45[i][j];
+                        }
+                    }
+                    for(int i = 0; i < WINDOW_SIZE; i++){
+                        for(int j = 0; j < WINDOW_SIZE; j++){
+                            GLCM45[i][j] /= soma;
                         }
                     }
                 }
 
-                if((gray.rows > (grayX + WINDOW_SIZE)) && (gray.cols > (grayY + WINDOW_SIZE))){
-                    // Compute 45 degrees
-                    for(int i = -(OFFSET_45.x * DISTANCE); i < window.rows; i++){
-                        for(int j = 0; j < window.cols - (OFFSET_45.y * DISTANCE); j++){
-                            int index_i = (int) (gray.at<unsigned char>(Point(grayY + j, grayX + i)) * LIMIAR_CINZA / 256);
-                            int index_j = (int) (gray.at<unsigned char>(Point(grayY + j + (DISTANCE * OFFSET_45.y), grayX + i + (DISTANCE * OFFSET_45.x))) * LIMIAR_CINZA / 256);
-                            GLCM45[index_i][index_j]++;
-                            GLCM45[index_j][index_i]++;
+                // Compute 90 degrees
+                for(int i = -(OFFSET_90.x * DISTANCE); i < window.rows; i++){
+                    for(int j = 0 - (OFFSET_90.y * DISTANCE); j < window.cols; j++){
+                        int index_i = (int) (gray.at<unsigned char>(Point(grayY + j, grayX + i)) * LIMIAR_CINZA / 256);
+                        int index_j = (int) (gray.at<unsigned char>(Point(grayY + j + (DISTANCE * OFFSET_90.y), grayX + i + (DISTANCE * OFFSET_90.x))) * LIMIAR_CINZA / 256);
+                        GLCM45[index_i][index_j]++;
+                        GLCM45[index_j][index_i]++;
+                    }
+                }
+                // Normalizar
+                {
+                    int soma = 0;
+                    for(int i = 0; i < WINDOW_SIZE; i++){
+                        for(int j = 0; j < WINDOW_SIZE; j++){
+                            soma += GLCM90[i][j];
                         }
                     }
-                    // Normalizar
-                    {
-                        int soma = 0;
-                        for(int i = 0; i < WINDOW_SIZE; i++){
-                            for(int j = 0; j < WINDOW_SIZE; j++){
-                                soma += GLCM45[i][j];
-                            }
-                        }
-                        for(int i = 0; i < WINDOW_SIZE; i++){
-                            for(int j = 0; j < WINDOW_SIZE; j++){
-                                GLCM45[i][j] /= soma;
-                            }
+                    for(int i = 0; i < WINDOW_SIZE; i++){
+                        for(int j = 0; j < WINDOW_SIZE; j++){
+                            GLCM90[i][j] /= soma;
                         }
                     }
                 }
 
-                if((gray.rows > (grayX + WINDOW_SIZE)) && (gray.cols > (grayY + WINDOW_SIZE))){
-                    // Compute 90 degrees
-                    for(int i = -(OFFSET_90.x * DISTANCE); i < window.rows; i++){
-                        for(int j = 0 - (OFFSET_90.y * DISTANCE); j < window.cols; j++){
-                            int index_i = (int) (gray.at<unsigned char>(Point(grayY + j, grayX + i)) * LIMIAR_CINZA / 256);
-                            int index_j = (int) (gray.at<unsigned char>(Point(grayY + j + (DISTANCE * OFFSET_90.y), grayX + i + (DISTANCE * OFFSET_90.x))) * LIMIAR_CINZA / 256);
-                            GLCM45[index_i][index_j]++;
-                            GLCM45[index_j][index_i]++;
-                        }
-                    }
-                    // Normalizar
-                    {
-                        int soma = 0;
-                        for(int i = 0; i < WINDOW_SIZE; i++){
-                            for(int j = 0; j < WINDOW_SIZE; j++){
-                                soma += GLCM90[i][j];
-                            }
-                        }
-                        for(int i = 0; i < WINDOW_SIZE; i++){
-                            for(int j = 0; j < WINDOW_SIZE; j++){
-                                GLCM90[i][j] /= soma;
-                            }
-                        }
+                for(int i = -(OFFSET_135.x * DISTANCE); i < window.rows; i++){
+                    for(int j = -(OFFSET_135.y * DISTANCE); j < window.cols; j++){
+                        int index_i = (int) (gray.at<unsigned char>(Point(grayY + j, grayX + i)) * LIMIAR_CINZA / 256);
+                        int index_j = (int) (gray.at<unsigned char>(Point(grayY + j + (DISTANCE * OFFSET_135.y), grayX + i + (DISTANCE * OFFSET_135.x))) * LIMIAR_CINZA / 256);
+                        GLCM45[index_i][index_j]++;
+                        GLCM45[index_j][index_i]++;
                     }
                 }
-
-                if((gray.rows > (grayX + WINDOW_SIZE)) && (gray.cols > (grayY + WINDOW_SIZE))){
-                    for(int i = -(OFFSET_135.x * DISTANCE); i < window.rows; i++){
-                        for(int j = -(OFFSET_135.y * DISTANCE); j < window.cols; j++){
-                            int index_i = (int) (gray.at<unsigned char>(Point(grayY + j, grayX + i)) * LIMIAR_CINZA / 256);
-                            int index_j = (int) (gray.at<unsigned char>(Point(grayY + j + (DISTANCE * OFFSET_135.y), grayX + i + (DISTANCE * OFFSET_135.x))) * LIMIAR_CINZA / 256);
-                            GLCM45[index_i][index_j]++;
-                            GLCM45[index_j][index_i]++;
+                // Normalizar
+                {
+                    int soma = 0;
+                    for(int i = 0; i < WINDOW_SIZE; i++){
+                        for(int j = 0; j < WINDOW_SIZE; j++){
+                            soma += GLCM135[i][j];
                         }
                     }
-                    // Normalizar
-                    {
-                        int soma = 0;
-                        for(int i = 0; i < WINDOW_SIZE; i++){
-                            for(int j = 0; j < WINDOW_SIZE; j++){
-                                soma += GLCM135[i][j];
-                            }
-                        }
-                        for(int i = 0; i < WINDOW_SIZE; i++){
-                            for(int j = 0; j < WINDOW_SIZE; j++){
-                                GLCM135[i][j] /= soma;
-                            }
+                    for(int i = 0; i < WINDOW_SIZE; i++){
+                        for(int j = 0; j < WINDOW_SIZE; j++){
+                            GLCM135[i][j] /= soma;
                         }
                     }
                 }
