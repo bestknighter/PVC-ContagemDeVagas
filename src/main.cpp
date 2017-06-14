@@ -10,11 +10,11 @@ using namespace cv;
 
 // Termina GLCM
 
-// Começa Huffman (Transformada de huff (rho theta), mesmo alpha)
+// Começa Hough (Transformada de Hough (rho theta), mesmo alpha)
 
 
 
-// Termina Huffman
+// Termina Hough
 
 
 int main(int argc, char** argv){
@@ -46,11 +46,11 @@ int main(int argc, char** argv){
 
     // Termina GLCM
 
-    // Começa Huffman (Transformada de huff (rho theta), mesmo alpha)
+    // Começa Hough (Transformada de Hough (rho theta), mesmo alpha)
 
 
 
-    // Termina Huffman
+    // Termina Hough
 
     waitKey(0);
 
@@ -63,8 +63,8 @@ int main(int argc, char** argv){
 
 // Termina GLCM
 
-// Começa Huffman (Transformada de huff (rho theta), mesmo alpha)
+// Começa Hough (Transformada de Hough (rho theta), mesmo alpha)
 
 
 
-// Termina Huffman
+// Termina Hough
