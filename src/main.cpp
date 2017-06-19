@@ -9,13 +9,12 @@ using namespace cv;
 #define WINDOW_SIZE 32
 #define LIMIAR_CINZA 32
 #define DISTANCE 2
-#define OFFSET_0 Point(0, 1)
-#define OFFSET_45 Point(-1, 1)
-#define OFFSET_90 Point(-1, 0)
+#define OFFSET_0 Point(1, 0)
+#define OFFSET_45 Point(1, -1)
+#define OFFSET_90 Point(0, -1)
 #define OFFSET_135 Point(-1, -1)
-
-
-
+#define NUM_FEATURES 4 // Entropia, Energia, Homogeneidade e Correlacao
+#define FEATURES_ORDER "entropia energia homogeneidade correlacao"
 
 // Termina GLCM
 
@@ -61,28 +60,41 @@ int main(int argc, char** argv){
     imshow("angle", angle);
 
     // Começa GLCM (matriz de homogeneidades)
-    float features[1];
-
+    int featuresWidth = img.cols/WINDOW_SIZE;
+    int featuresHeight = img.rows/WINDOW_SIZE;
+    Mat featuresMatGLCM0( {featuresHeight, featuresWidth, NUM_FEATURES}, CV_32F);
+    Mat featuresMatGLCM45( {featuresHeight, featuresWidth, NUM_FEATURES}, CV_32F);
+    Mat featuresMatGLCM90( {featuresHeight, featuresWidth, NUM_FEATURES}, CV_32F);
+    Mat featuresMatGLCM135( {featuresHeight, featuresWidth, NUM_FEATURES}, CV_32F);
     {
         Mat gray;
-        cvtColor(mag, gray, COLOR_BGR2GRAY);
-        Mat window;
-        float GLCM0[WINDOW_SIZE][WINDOW_SIZE];
-        float GLCM45[WINDOW_SIZE][WINDOW_SIZE];
-        float GLCM90[WINDOW_SIZE][WINDOW_SIZE];
-        float GLCM135[WINDOW_SIZE][WINDOW_SIZE];
+        img.convertTo(gray, CV_8U, 255.);
+        cvtColor(gray, gray, COLOR_BGR2GRAY);
+        float GLCM0[WINDOW_SIZE][WINDOW_SIZE] = {0.};
+        float GLCM45[WINDOW_SIZE][WINDOW_SIZE] = {0.};
+        float GLCM90[WINDOW_SIZE][WINDOW_SIZE] = {0.};
+        float GLCM135[WINDOW_SIZE][WINDOW_SIZE] = {0.};
+        float featuresGLCM0[NUM_FEATURES] = {0.};
+        float featuresGLCM45[NUM_FEATURES] = {0.};
+        float featuresGLCM90[NUM_FEATURES] = {0.};
+        float featuresGLCM135[NUM_FEATURES] = {0.};
 
-        window = gray.clone();
-        for(int grayX = 0; grayX < gray.rows; grayX += WINDOW_SIZE){ // Faz a janela andar pela imagem
-            for(int grayY = 0; grayY < gray.cols; grayY += WINDOW_SIZE){
-                window.adjustROI(grayX, grayY, grayX + WINDOW_SIZE, grayY + WINDOW_SIZE);
-                if(((grayX + WINDOW_SIZE) >= gray.rows) || ((grayY + WINDOW_SIZE) >= gray.cols)){ // Trata erro de janela ficar fora da imagem
+        for(int grayY = 0; grayY < gray.rows; grayY += WINDOW_SIZE){ // Faz a janela andar pela imagem
+            for(int grayX = 0; grayX < gray.cols; grayX += WINDOW_SIZE){
+                if(((grayX + WINDOW_SIZE) >= gray.cols) || ((grayY + WINDOW_SIZE) >= gray.rows)){ // Trata erro de janela ficar fora da imagem
                     continue;
                 }
 
+                Point start;
+                Point end;
+
                 // Compute 0 degrees
-                for(int i = 0; i < window.rows - (OFFSET_0.x * DISTANCE); i++){
-                    for(int j = 0; j < window.cols - (OFFSET_0.y * DISTANCE); j++){
+                Point offset = OFFSET_0 * DISTANCE;
+                start.x = offset.x < 0 ? -offset.x : 0;
+                start.y = offset.y < 0 ? -offset.y : 0;
+                end = Point(WINDOW_SIZE, WINDOW_SIZE) - offset;
+                for(int j = start.y; j < end.y; j++){
+                    for(int i = start.x; i < end.x; i++){
                         //printf("\n");
 
                         int posY = j + grayY; // Posição real na imagem + deslocamento da janela
@@ -95,12 +107,12 @@ int main(int argc, char** argv){
 
                         //printf("Posicao real COMPARADO: (%d, %d)\n", posX2, posY2);
 
-                        int value_i = gray.at<unsigned char>(Point(posY, posX)); // Valor do pixel sendo testado
-                        int value_j = gray.at<unsigned char>(Point(posY2, posX2)); // Valor do pixel comparado
+                        int value_i = gray.at<unsigned char>(posY, posX); // Valor do pixel sendo testado
+                        int value_j = gray.at<unsigned char>(posY2, posX2); // Valor do pixel comparado
 
                         //printf("Valor do pixel TESTADO: %d - COMPARADO: %d\n", value_i, value_j);
 
-                        int index_i = value_i *  LIMIAR_CINZA/ 256; // Ajuste do valor de pixel para o tamanho da janela (LIMIAR_CINZA tons de cinza)
+                        int index_i = value_i * LIMIAR_CINZA / 256; // Ajuste do valor de pixel para o tamanho da janela (LIMIAR_CINZA tons de cinza)
                         int index_j = value_j * LIMIAR_CINZA / 256;
 
                         //printf("Valor do pixel ajustado para %d tons de cinza... TESTADO: %d - COMPARADO: %d\n", LIMIAR_CINZA, index_i, index_j);
@@ -114,95 +126,198 @@ int main(int argc, char** argv){
                     }
                     //printf("\n");
                 }
-                // Normalizar
+                // Normalizar e salvar características no vetor
                 {
-                    int soma = 0;
-                    for(int i = 0; i < WINDOW_SIZE; i++){
-                        for(int j = 0; j < WINDOW_SIZE; j++){
+                    float soma = 0;
+                    for(int i = 0; i < LIMIAR_CINZA; i++){
+                        for(int j = 0; j < LIMIAR_CINZA; j++){
                             soma += GLCM0[i][j];
                         }
                     }
-                    for(int i = 0; i < WINDOW_SIZE; i++){
-                        for(int j = 0; j < WINDOW_SIZE; j++){
+                    float entropy = 0, energy = 0, homogeneity = 0, mean = 0, varianceSqr = 0, correlation = 0;
+                    for(int i = 0; i < LIMIAR_CINZA; i++){
+                        for(int j = 0; j < LIMIAR_CINZA; j++){
                             GLCM0[i][j] /= soma;
+                            entropy += (0 == GLCM0[i][j]) ? 0 : GLCM0[i][j]*std::log(GLCM0[i][j]);
+                            energy += GLCM0[i][j]*GLCM0[i][j];
+                            homogeneity += GLCM0[i][j]/(1+(i-j)*(i-j));
+                            mean += i*GLCM0[i][j];
                         }
                     }
+                    for(int i = 0; i < LIMIAR_CINZA; i++){
+                        for(int j = 0; j < LIMIAR_CINZA; j++){
+                            varianceSqr += GLCM0[i][j]*(i-mean)*(i-mean);
+                        }
+                    }
+                    for(int i = 0; i < LIMIAR_CINZA; i++){
+                        for(int j = 0; j < LIMIAR_CINZA; j++){
+                            correlation += GLCM0[i][j]*(i-mean)*(j-mean)/varianceSqr;
+                        }
+                    }
+                    featuresGLCM0[0] = -entropy;
+                    featuresGLCM0[1] = energy;
+                    featuresGLCM0[2] = homogeneity;
+                    featuresGLCM0[3] = correlation;
                 }
             
                 // Compute 45 degrees
-                for(int i = -(OFFSET_45.x * DISTANCE); i < window.rows; i++){
-                    for(int j = 0; j < window.cols - (OFFSET_45.y * DISTANCE); j++){
-                        int index_i = (int) (gray.at<unsigned char>(Point(grayY + j, grayX + i)) * LIMIAR_CINZA / 256);
-                        int index_j = (int) (gray.at<unsigned char>(Point(grayY + j + (DISTANCE * OFFSET_45.y), grayX + i + (DISTANCE * OFFSET_45.x))) * LIMIAR_CINZA / 256);
+                offset = OFFSET_45 * DISTANCE;
+                start.x = offset.x < 0 ? -offset.x : 0;
+                start.y = offset.y < 0 ? -offset.y : 0;
+                end = Point(WINDOW_SIZE, WINDOW_SIZE) - offset;
+                for(int j = start.y; j < end.y; j++){
+                    for(int i = start.x; i < end.x; i++){
+                        int index_i = (int) (gray.at<unsigned char>(grayY + j, grayX + i) * LIMIAR_CINZA / 256);
+                        int index_j = (int) (gray.at<unsigned char>(grayY + j + offset.y, grayX + i + offset.x) * LIMIAR_CINZA / 256);
                         GLCM45[index_i][index_j]++;
                         GLCM45[index_j][index_i]++;
                     }
                 }
-                // Normalizar
+                // Normalizar e salvar características no vetor
                 {
-                    int soma = 0;
-                    for(int i = 0; i < WINDOW_SIZE; i++){
-                        for(int j = 0; j < WINDOW_SIZE; j++){
+                    float soma = 0;
+                    for(int i = 0; i < LIMIAR_CINZA; i++){
+                        for(int j = 0; j < LIMIAR_CINZA; j++){
                             soma += GLCM45[i][j];
                         }
                     }
-                    for(int i = 0; i < WINDOW_SIZE; i++){
-                        for(int j = 0; j < WINDOW_SIZE; j++){
+                    float entropy = 0, energy = 0, homogeneity = 0, mean = 0, varianceSqr = 0, correlation = 0;
+                    for(int i = 0; i < LIMIAR_CINZA; i++){
+                        for(int j = 0; j < LIMIAR_CINZA; j++){
                             GLCM45[i][j] /= soma;
+                            entropy += (0 == GLCM45[i][j]) ? 0 : GLCM45[i][j]*std::log(GLCM45[i][j]);
+                            energy += GLCM45[i][j]*GLCM45[i][j];
+                            homogeneity += GLCM45[i][j]/(1+(i-j)*(i-j));
+                            mean += i*GLCM45[i][j];
                         }
                     }
+                    for(int i = 0; i < LIMIAR_CINZA; i++){
+                        for(int j = 0; j < LIMIAR_CINZA; j++){
+                            varianceSqr += GLCM45[i][j]*(i-mean)*(i-mean);
+                        }
+                    }
+                    for(int i = 0; i < LIMIAR_CINZA; i++){
+                        for(int j = 0; j < LIMIAR_CINZA; j++){
+                            correlation += GLCM45[i][j]*(i-mean)*(j-mean)/varianceSqr;
+                        }
+                    }
+                    featuresGLCM45[0] = -entropy;
+                    featuresGLCM45[1] = energy;
+                    featuresGLCM45[2] = homogeneity;
+                    featuresGLCM45[3] = correlation;
                 }
 
                 // Compute 90 degrees
-                for(int i = -(OFFSET_90.x * DISTANCE); i < window.rows; i++){
-                    for(int j = 0 - (OFFSET_90.y * DISTANCE); j < window.cols; j++){
-                        int index_i = (int) (gray.at<unsigned char>(Point(grayY + j, grayX + i)) * LIMIAR_CINZA / 256);
-                        int index_j = (int) (gray.at<unsigned char>(Point(grayY + j + (DISTANCE * OFFSET_90.y), grayX + i + (DISTANCE * OFFSET_90.x))) * LIMIAR_CINZA / 256);
-                        GLCM45[index_i][index_j]++;
-                        GLCM45[index_j][index_i]++;
+                offset = OFFSET_90 * DISTANCE;
+                start.x = offset.x < 0 ? -offset.x : 0;
+                start.y = offset.y < 0 ? -offset.y : 0;
+                end = Point(WINDOW_SIZE, WINDOW_SIZE) - offset;
+                for(int j = start.y; j < end.y; j++){
+                    for(int i = start.x; i < end.x; i++){
+                        int index_i = (int) (gray.at<unsigned char>(grayY + j, grayX + i) * LIMIAR_CINZA / 256);
+                        int index_j = (int) (gray.at<unsigned char>(grayY + j + offset.y, grayX + i + offset.x) * LIMIAR_CINZA / 256);
+                        GLCM90[index_i][index_j]++;
+                        GLCM90[index_j][index_i]++;
                     }
                 }
-                // Normalizar
+                // Normalizar e salvar características no vetor
                 {
-                    int soma = 0;
-                    for(int i = 0; i < WINDOW_SIZE; i++){
-                        for(int j = 0; j < WINDOW_SIZE; j++){
+                    float soma = 0;
+                    for(int i = 0; i < LIMIAR_CINZA; i++){
+                        for(int j = 0; j < LIMIAR_CINZA; j++){
                             soma += GLCM90[i][j];
                         }
                     }
-                    for(int i = 0; i < WINDOW_SIZE; i++){
-                        for(int j = 0; j < WINDOW_SIZE; j++){
+                    float entropy = 0, energy = 0, homogeneity = 0, mean = 0, varianceSqr = 0, correlation = 0;
+                    for(int i = 0; i < LIMIAR_CINZA; i++){
+                        for(int j = 0; j < LIMIAR_CINZA; j++){
                             GLCM90[i][j] /= soma;
+                            entropy += (0 == GLCM90[i][j]) ? 0 : GLCM90[i][j]*std::log(GLCM90[i][j]);
+                            energy += GLCM90[i][j]*GLCM90[i][j];
+                            homogeneity += GLCM90[i][j]/(1+(i-j)*(i-j));
+                            mean += i*GLCM90[i][j];
                         }
                     }
+                    for(int i = 0; i < LIMIAR_CINZA; i++){
+                        for(int j = 0; j < LIMIAR_CINZA; j++){
+                            varianceSqr += GLCM90[i][j]*(i-mean)*(i-mean);
+                        }
+                    }
+                    for(int i = 0; i < LIMIAR_CINZA; i++){
+                        for(int j = 0; j < LIMIAR_CINZA; j++){
+                            correlation += GLCM90[i][j]*(i-mean)*(j-mean)/varianceSqr;
+                        }
+                    }
+                    featuresGLCM90[0] = -entropy;
+                    featuresGLCM90[1] = energy;
+                    featuresGLCM90[2] = homogeneity;
+                    featuresGLCM90[3] = correlation;
                 }
 
-                for(int i = -(OFFSET_135.x * DISTANCE); i < window.rows; i++){
-                    for(int j = -(OFFSET_135.y * DISTANCE); j < window.cols; j++){
-                        int index_i = (int) (gray.at<unsigned char>(Point(grayY + j, grayX + i)) * LIMIAR_CINZA / 256);
-                        int index_j = (int) (gray.at<unsigned char>(Point(grayY + j + (DISTANCE * OFFSET_135.y), grayX + i + (DISTANCE * OFFSET_135.x))) * LIMIAR_CINZA / 256);
-                        GLCM45[index_i][index_j]++;
-                        GLCM45[index_j][index_i]++;
+                // Compute 135 degrees
+                offset = OFFSET_135 * DISTANCE;
+                start.x = offset.x < 0 ? -offset.x : 0;
+                start.y = offset.y < 0 ? -offset.y : 0;
+                end = Point(WINDOW_SIZE, WINDOW_SIZE) - offset;
+                for(int j = start.y; j < end.y; j++){
+                    for(int i = start.x; i < end.x; i++){
+                        int index_i = (int) (gray.at<unsigned char>(grayY + j, grayX + i) * LIMIAR_CINZA / 256);
+                        int index_j = (int) (gray.at<unsigned char>(grayY + j + offset.y, grayX + i + offset.x) * LIMIAR_CINZA / 256);
+                        GLCM135[index_i][index_j]++;
+                        GLCM135[index_j][index_i]++;
                     }
                 }
-                // Normalizar
+                // Normalizar e salvar características no vetor
                 {
-                    int soma = 0;
-                    for(int i = 0; i < WINDOW_SIZE; i++){
-                        for(int j = 0; j < WINDOW_SIZE; j++){
+                    float soma = 0;
+                    for(int i = 0; i < LIMIAR_CINZA; i++){
+                        for(int j = 0; j < LIMIAR_CINZA; j++){
                             soma += GLCM135[i][j];
                         }
                     }
-                    for(int i = 0; i < WINDOW_SIZE; i++){
-                        for(int j = 0; j < WINDOW_SIZE; j++){
+                    float entropy = 0, energy = 0, homogeneity = 0, mean = 0, varianceSqr = 0, correlation = 0;
+                    for(int i = 0; i < LIMIAR_CINZA; i++){
+                        for(int j = 0; j < LIMIAR_CINZA; j++){
                             GLCM135[i][j] /= soma;
+                            entropy += (0 == GLCM135[i][j]) ? 0 : GLCM135[i][j]*std::log(GLCM135[i][j]);
+                            energy += GLCM135[i][j]*GLCM45[i][j];
+                            homogeneity += GLCM135[i][j]/(1+(i-j)*(i-j));
+                            mean += i*GLCM135[i][j];
                         }
                     }
+                    for(int i = 0; i < LIMIAR_CINZA; i++){
+                        for(int j = 0; j < LIMIAR_CINZA; j++){
+                            varianceSqr += GLCM135[i][j]*(i-mean)*(i-mean);
+                        }
+                    }
+                    for(int i = 0; i < LIMIAR_CINZA; i++){
+                        for(int j = 0; j < LIMIAR_CINZA; j++){
+                            correlation += GLCM135[i][j]*(i-mean)*(j-mean)/varianceSqr;
+                        }
+                    }
+                    featuresGLCM135[0] = -entropy;
+                    featuresGLCM135[1] = energy;
+                    featuresGLCM135[2] = homogeneity;
+                    featuresGLCM135[3] = correlation;
                 }
 
                 // SALVAR CARACTERISTICAS
+                {
+                    for(int k = 0; k < NUM_FEATURES; k++) {
+                        featuresMatGLCM0.at<float>(grayY/WINDOW_SIZE, grayX/WINDOW_SIZE, k) = featuresGLCM0[k];
+                        featuresMatGLCM45.at<float>(grayY/WINDOW_SIZE, grayX/WINDOW_SIZE, k) = featuresGLCM45[k];
+                        featuresMatGLCM90.at<float>(grayY/WINDOW_SIZE, grayX/WINDOW_SIZE, k) = featuresGLCM90[k];
+                        featuresMatGLCM135.at<float>(grayY/WINDOW_SIZE, grayX/WINDOW_SIZE, k) = featuresGLCM135[k];
+                    }
+                }
             }
         }
+        FileStorage ymlFeatures("Features.yml", FileStorage::WRITE);
+        ymlFeatures << "FeatureOrder" << FEATURES_ORDER;
+        ymlFeatures << "GLCM-0" << featuresMatGLCM0;
+        ymlFeatures << "GLCM-45" << featuresMatGLCM45;
+        ymlFeatures << "GLCM-90" << featuresMatGLCM90;
+        ymlFeatures << "GLCM-135" << featuresMatGLCM135;
     }
 
     // Termina GLCM
