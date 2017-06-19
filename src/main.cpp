@@ -1,12 +1,10 @@
 #include <opencv2/opencv.hpp>
-#include "opencv2/xfeatures2d.hpp"
 
 using namespace cv;
 
 
 // Começa GLCM (matriz de homogeneidades)
-
-#define WINDOW_SIZE 32
+#define WINDOW_SIZE 16
 #define LIMIAR_CINZA 32
 #define DISTANCE 2
 #define OFFSET_0 Point(1, 0)
@@ -16,6 +14,7 @@ using namespace cv;
 #define NUM_FEATURES 4 // Entropia, Energia, Homogeneidade e Correlacao
 #define FEATURES_ORDER "entropia energia homogeneidade correlacao"
 
+Mat ExtractFeatureMat(Mat featuresMat, int featureNum);
 // Termina GLCM
 
 // Começa Hough (Transformada de Hough (rho theta), mesmo alpha)
@@ -43,6 +42,8 @@ int main(int argc, char** argv){
         exit(1);
     }
 
+    printf("Processando...\n");    
+
     img.convertTo(img, CV_32F, 1/255.0);
     
     // Calculate gradients gx, gy
@@ -53,11 +54,11 @@ int main(int argc, char** argv){
     Mat mag, angle; 
     cartToPolar(gx, gy, mag, angle, 1);
 
-    imshow("img", img);
-    imshow("gx", gx);
-    imshow("gy", gy);
-    imshow("mag", mag);
-    imshow("angle", angle);
+    // imshow("img", img);
+    // imshow("gx", gx);
+    // imshow("gy", gy);
+    // imshow("mag", mag);
+    // imshow("angle", angle);
 
     // Começa GLCM (matriz de homogeneidades)
     int featuresWidth = img.cols/WINDOW_SIZE;
@@ -70,10 +71,10 @@ int main(int argc, char** argv){
         Mat gray;
         img.convertTo(gray, CV_8U, 255.);
         cvtColor(gray, gray, COLOR_BGR2GRAY);
-        float GLCM0[WINDOW_SIZE][WINDOW_SIZE] = {0.};
-        float GLCM45[WINDOW_SIZE][WINDOW_SIZE] = {0.};
-        float GLCM90[WINDOW_SIZE][WINDOW_SIZE] = {0.};
-        float GLCM135[WINDOW_SIZE][WINDOW_SIZE] = {0.};
+        float GLCM0[LIMIAR_CINZA][LIMIAR_CINZA] = {0.};
+        float GLCM45[LIMIAR_CINZA][LIMIAR_CINZA] = {0.};
+        float GLCM90[LIMIAR_CINZA][LIMIAR_CINZA] = {0.};
+        float GLCM135[LIMIAR_CINZA][LIMIAR_CINZA] = {0.};
         float featuresGLCM0[NUM_FEATURES] = {0.};
         float featuresGLCM45[NUM_FEATURES] = {0.};
         float featuresGLCM90[NUM_FEATURES] = {0.};
@@ -312,12 +313,53 @@ int main(int argc, char** argv){
                 }
             }
         }
-        FileStorage ymlFeatures("Features.yml", FileStorage::WRITE);
-        ymlFeatures << "FeatureOrder" << FEATURES_ORDER;
-        ymlFeatures << "GLCM-0" << featuresMatGLCM0;
-        ymlFeatures << "GLCM-45" << featuresMatGLCM45;
-        ymlFeatures << "GLCM-90" << featuresMatGLCM90;
-        ymlFeatures << "GLCM-135" << featuresMatGLCM135;
+
+        {
+            FileStorage ymlFeatures("./debug-data/Features.yml", FileStorage::WRITE);
+            ymlFeatures << "FeatureOrder" << FEATURES_ORDER;
+            ymlFeatures << "GLCM-0" << featuresMatGLCM0;
+            ymlFeatures << "GLCM-45" << featuresMatGLCM45;
+            ymlFeatures << "GLCM-90" << featuresMatGLCM90;
+            ymlFeatures << "GLCM-135" << featuresMatGLCM135;
+
+            Mat entropia, energia, homogeneidade, correlacao;
+
+            ExtractFeatureMat(featuresMatGLCM0, 0).convertTo(entropia, CV_8U, 255);
+            ExtractFeatureMat(featuresMatGLCM0, 1).convertTo(energia, CV_8U, 255);
+            ExtractFeatureMat(featuresMatGLCM0, 2).convertTo(homogeneidade, CV_8U, 255);
+            ExtractFeatureMat(featuresMatGLCM0, 3).convertTo(correlacao, CV_8U, 255);
+            imwrite("./debug-data/GLCM0-Entropia.jpg", entropia);
+            imwrite("./debug-data/GLCM0-Energia.jpg", energia);
+            imwrite("./debug-data/GLCM0-Homogeneidade.jpg", homogeneidade);
+            imwrite("./debug-data/GLCM0-Correlacao.jpg", correlacao);
+
+            ExtractFeatureMat(featuresMatGLCM45, 0).convertTo(entropia, CV_8U, 255);
+            ExtractFeatureMat(featuresMatGLCM45, 1).convertTo(energia, CV_8U, 255);
+            ExtractFeatureMat(featuresMatGLCM45, 2).convertTo(homogeneidade, CV_8U, 255);
+            ExtractFeatureMat(featuresMatGLCM45, 3).convertTo(correlacao, CV_8U, 255);
+            imwrite("./debug-data/GLCM45-Entropia.jpg", entropia);
+            imwrite("./debug-data/GLCM45-Energia.jpg", energia);
+            imwrite("./debug-data/GLCM45-Homogeneidade.jpg", homogeneidade);
+            imwrite("./debug-data/GLCM45-Correlacao.jpg", correlacao);
+
+            ExtractFeatureMat(featuresMatGLCM90, 0).convertTo(entropia, CV_8U, 255);
+            ExtractFeatureMat(featuresMatGLCM90, 1).convertTo(energia, CV_8U, 255);
+            ExtractFeatureMat(featuresMatGLCM90, 2).convertTo(homogeneidade, CV_8U, 255);
+            ExtractFeatureMat(featuresMatGLCM90, 3).convertTo(correlacao, CV_8U, 255);
+            imwrite("./debug-data/GLCM90-Entropia.jpg", entropia);
+            imwrite("./debug-data/GLCM90-Energia.jpg", energia);
+            imwrite("./debug-data/GLCM90-Homogeneidade.jpg", homogeneidade);
+            imwrite("./debug-data/GLCM90-Correlacao.jpg", correlacao);
+
+            ExtractFeatureMat(featuresMatGLCM135, 0).convertTo(entropia, CV_8U, 255);
+            ExtractFeatureMat(featuresMatGLCM135, 1).convertTo(energia, CV_8U, 255);
+            ExtractFeatureMat(featuresMatGLCM135, 2).convertTo(homogeneidade, CV_8U, 255);
+            ExtractFeatureMat(featuresMatGLCM135, 3).convertTo(correlacao, CV_8U, 255);
+            imwrite("./debug-data/GLCM135-Entropia.jpg", entropia);
+            imwrite("./debug-data/GLCM135-Energia.jpg", energia);
+            imwrite("./debug-data/GLCM135-Homogeneidade.jpg", homogeneidade);
+            imwrite("./debug-data/GLCM135-Correlacao.jpg", correlacao);
+        }
     }
 
     // Termina GLCM
@@ -329,12 +371,14 @@ int main(int argc, char** argv){
         cvtColor(mag, gray, COLOR_BGR2GRAY);
         threshold(gray, binarizado, BIN_THRES, 255, THRESH_BINARY);
         binarizado.convertTo(binarizado, CV_8UC1);
-        imshow("Hough - binarizado", binarizado);
+        // imshow("Hough - binarizado", binarizado);
+        imwrite("./debug-data/hough-binarizado.jpg", binarizado);
 
         // Faz fechamento customizado
         morphologyEx(binarizado, operado, MORPH_DILATE, getStructuringElement( MORPH_ELLIPSE, Size(TAM_DILATA, TAM_DILATA) ));
         morphologyEx(operado, operado, MORPH_ERODE, getStructuringElement( MORPH_ELLIPSE, Size(TAM_ERODE, TAM_ERODE) ));
-        imshow("Hough - operado", operado);
+        // imshow("Hough - operado", operado);
+        imwrite("./debug-data/hough-operado.jpg", operado);
 
         { // Acha as linhas por Hough
             std::vector<Vec2f> lines;
@@ -354,7 +398,8 @@ int main(int argc, char** argv){
                 line( houghWithLines, pt1, pt2, Scalar(0,0,255), 1, 8 );
             }
 
-            imshow("Hough - Linhas", houghWithLines);
+            // imshow("Hough - Linhas", houghWithLines);
+            imwrite("./debug-data/hough-linhas.jpg", houghWithLines);
         }
 
         // { // Acha os segmentos de linhas por Hough
@@ -363,13 +408,23 @@ int main(int argc, char** argv){
     }
     // Termina Hough
 
-    waitKey(0);
-
+    // waitKey(0);
+    printf("Pronto!\n");
     return 0;
 }
 
 // Começa GLCM (matriz de homogeneidades)
-
+Mat ExtractFeatureMat(Mat featuresMat, int featureNum) {
+    int sizeY = featuresMat.size[0];
+    int sizeX = featuresMat.size[1];
+    Mat feature(sizeY, sizeX, CV_32F);
+    for(int j = 0; j < sizeY; j++){
+        for(int i = 0; i < sizeX; i++){
+            feature.at<float>(j, i) = featuresMat.at<float>(j, i, featureNum);
+        }
+    }
+    return feature;
+}
 
 
 // Termina GLCM
