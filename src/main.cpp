@@ -4,15 +4,15 @@ using namespace cv;
 
 
 // Começa GLCM (matriz de homogeneidades)
-#define WINDOW_SIZE 64
+#define WINDOW_SIZE 32
 #define LIMIAR_CINZA 32
 #define DISTANCE 3
 #define OFFSET_0 Point(1, 0)
 #define OFFSET_45 Point(1, -1)
 #define OFFSET_90 Point(0, -1)
 #define OFFSET_135 Point(-1, -1)
-#define NUM_FEATURES 4 // Entropia, Energia, Homogeneidade e Correlacao
-#define FEATURES_ORDER "entropia energia homogeneidade correlacao"
+#define NUM_FEATURES 1 // Homogeneidade
+#define FEATURES_ORDER "homogeneidade"
 
 Mat ExtractFeatureMat(Mat featuresMat, int featureNum);
 // Termina GLCM
@@ -135,30 +135,14 @@ int main(int argc, char** argv){
                             soma += GLCM0[i][j];
                         }
                     }
-                    float entropy = 0, energy = 0, homogeneity = 0, mean = 0, varianceSqr = 0, correlation = 0;
+                    float homogeneity = 0;
                     for(int i = 0; i < LIMIAR_CINZA; i++){
                         for(int j = 0; j < LIMIAR_CINZA; j++){
                             GLCM0[i][j] /= soma;
-                            entropy += (0 == GLCM0[i][j]) ? 0 : GLCM0[i][j]*std::log(GLCM0[i][j]);
-                            energy += GLCM0[i][j]*GLCM0[i][j];
                             homogeneity += GLCM0[i][j]/(1+(i-j)*(i-j));
-                            mean += i*GLCM0[i][j];
                         }
                     }
-                    for(int i = 0; i < LIMIAR_CINZA; i++){
-                        for(int j = 0; j < LIMIAR_CINZA; j++){
-                            varianceSqr += GLCM0[i][j]*(i-mean)*(i-mean);
-                        }
-                    }
-                    for(int i = 0; i < LIMIAR_CINZA; i++){
-                        for(int j = 0; j < LIMIAR_CINZA; j++){
-                            correlation += GLCM0[i][j]*(i-mean)*(j-mean)/varianceSqr;
-                        }
-                    }
-                    featuresGLCM0[0] = -entropy;
-                    featuresGLCM0[1] = energy;
-                    featuresGLCM0[2] = homogeneity;
-                    featuresGLCM0[3] = correlation;
+                    featuresGLCM0[0] = homogeneity;
                 }
             
                 // Compute 45 degrees
@@ -182,30 +166,14 @@ int main(int argc, char** argv){
                             soma += GLCM45[i][j];
                         }
                     }
-                    float entropy = 0, energy = 0, homogeneity = 0, mean = 0, varianceSqr = 0, correlation = 0;
+                    float homogeneity = 0;
                     for(int i = 0; i < LIMIAR_CINZA; i++){
                         for(int j = 0; j < LIMIAR_CINZA; j++){
                             GLCM45[i][j] /= soma;
-                            entropy += (0 == GLCM45[i][j]) ? 0 : GLCM45[i][j]*std::log(GLCM45[i][j]);
-                            energy += GLCM45[i][j]*GLCM45[i][j];
                             homogeneity += GLCM45[i][j]/(1+(i-j)*(i-j));
-                            mean += i*GLCM45[i][j];
                         }
                     }
-                    for(int i = 0; i < LIMIAR_CINZA; i++){
-                        for(int j = 0; j < LIMIAR_CINZA; j++){
-                            varianceSqr += GLCM45[i][j]*(i-mean)*(i-mean);
-                        }
-                    }
-                    for(int i = 0; i < LIMIAR_CINZA; i++){
-                        for(int j = 0; j < LIMIAR_CINZA; j++){
-                            correlation += GLCM45[i][j]*(i-mean)*(j-mean)/varianceSqr;
-                        }
-                    }
-                    featuresGLCM45[0] = -entropy;
-                    featuresGLCM45[1] = energy;
-                    featuresGLCM45[2] = homogeneity;
-                    featuresGLCM45[3] = correlation;
+                    featuresGLCM45[0] = homogeneity;
                 }
 
                 // Compute 90 degrees
@@ -229,30 +197,14 @@ int main(int argc, char** argv){
                             soma += GLCM90[i][j];
                         }
                     }
-                    float entropy = 0, energy = 0, homogeneity = 0, mean = 0, varianceSqr = 0, correlation = 0;
+                    float homogeneity = 0;
                     for(int i = 0; i < LIMIAR_CINZA; i++){
                         for(int j = 0; j < LIMIAR_CINZA; j++){
                             GLCM90[i][j] /= soma;
-                            entropy += (0 == GLCM90[i][j]) ? 0 : GLCM90[i][j]*std::log(GLCM90[i][j]);
-                            energy += GLCM90[i][j]*GLCM90[i][j];
                             homogeneity += GLCM90[i][j]/(1+(i-j)*(i-j));
-                            mean += i*GLCM90[i][j];
                         }
                     }
-                    for(int i = 0; i < LIMIAR_CINZA; i++){
-                        for(int j = 0; j < LIMIAR_CINZA; j++){
-                            varianceSqr += GLCM90[i][j]*(i-mean)*(i-mean);
-                        }
-                    }
-                    for(int i = 0; i < LIMIAR_CINZA; i++){
-                        for(int j = 0; j < LIMIAR_CINZA; j++){
-                            correlation += GLCM90[i][j]*(i-mean)*(j-mean)/varianceSqr;
-                        }
-                    }
-                    featuresGLCM90[0] = -entropy;
-                    featuresGLCM90[1] = energy;
-                    featuresGLCM90[2] = homogeneity;
-                    featuresGLCM90[3] = correlation;
+                    featuresGLCM90[0] = homogeneity;
                 }
 
                 // Compute 135 degrees
@@ -276,30 +228,14 @@ int main(int argc, char** argv){
                             soma += GLCM135[i][j];
                         }
                     }
-                    float entropy = 0, energy = 0, homogeneity = 0, mean = 0, varianceSqr = 0, correlation = 0;
+                    float homogeneity = 0;
                     for(int i = 0; i < LIMIAR_CINZA; i++){
                         for(int j = 0; j < LIMIAR_CINZA; j++){
                             GLCM135[i][j] /= soma;
-                            entropy += (0 == GLCM135[i][j]) ? 0 : GLCM135[i][j]*std::log(GLCM135[i][j]);
-                            energy += GLCM135[i][j]*GLCM45[i][j];
                             homogeneity += GLCM135[i][j]/(1+(i-j)*(i-j));
-                            mean += i*GLCM135[i][j];
                         }
                     }
-                    for(int i = 0; i < LIMIAR_CINZA; i++){
-                        for(int j = 0; j < LIMIAR_CINZA; j++){
-                            varianceSqr += GLCM135[i][j]*(i-mean)*(i-mean);
-                        }
-                    }
-                    for(int i = 0; i < LIMIAR_CINZA; i++){
-                        for(int j = 0; j < LIMIAR_CINZA; j++){
-                            correlation += GLCM135[i][j]*(i-mean)*(j-mean)/varianceSqr;
-                        }
-                    }
-                    featuresGLCM135[0] = -entropy;
-                    featuresGLCM135[1] = energy;
-                    featuresGLCM135[2] = homogeneity;
-                    featuresGLCM135[3] = correlation;
+                    featuresGLCM135[0] = homogeneity;
                 }
 
                 // SALVAR CARACTERISTICAS
@@ -322,43 +258,19 @@ int main(int argc, char** argv){
             ymlFeatures << "GLCM-90" << featuresMatGLCM90;
             ymlFeatures << "GLCM-135" << featuresMatGLCM135;
 
-            Mat entropia, energia, homogeneidade, correlacao;
+            Mat homogeneidade;
 
-            ExtractFeatureMat(featuresMatGLCM0, 0).convertTo(entropia, CV_8U, 255);
-            ExtractFeatureMat(featuresMatGLCM0, 1).convertTo(energia, CV_8U, 255);
-            ExtractFeatureMat(featuresMatGLCM0, 2).convertTo(homogeneidade, CV_8U, 255);
-            ExtractFeatureMat(featuresMatGLCM0, 3).convertTo(correlacao, CV_8U, 255);
-            imwrite("./debug-data/GLCM0-Entropia.jpg", entropia);
-            imwrite("./debug-data/GLCM0-Energia.jpg", energia);
+            ExtractFeatureMat(featuresMatGLCM0, 0).convertTo(homogeneidade, CV_8U, 255);
             imwrite("./debug-data/GLCM0-Homogeneidade.jpg", homogeneidade);
-            imwrite("./debug-data/GLCM0-Correlacao.jpg", correlacao);
 
-            ExtractFeatureMat(featuresMatGLCM45, 0).convertTo(entropia, CV_8U, 255);
-            ExtractFeatureMat(featuresMatGLCM45, 1).convertTo(energia, CV_8U, 255);
-            ExtractFeatureMat(featuresMatGLCM45, 2).convertTo(homogeneidade, CV_8U, 255);
-            ExtractFeatureMat(featuresMatGLCM45, 3).convertTo(correlacao, CV_8U, 255);
-            imwrite("./debug-data/GLCM45-Entropia.jpg", entropia);
-            imwrite("./debug-data/GLCM45-Energia.jpg", energia);
+            ExtractFeatureMat(featuresMatGLCM45, 0).convertTo(homogeneidade, CV_8U, 255);
             imwrite("./debug-data/GLCM45-Homogeneidade.jpg", homogeneidade);
-            imwrite("./debug-data/GLCM45-Correlacao.jpg", correlacao);
 
-            ExtractFeatureMat(featuresMatGLCM90, 0).convertTo(entropia, CV_8U, 255);
-            ExtractFeatureMat(featuresMatGLCM90, 1).convertTo(energia, CV_8U, 255);
-            ExtractFeatureMat(featuresMatGLCM90, 2).convertTo(homogeneidade, CV_8U, 255);
-            ExtractFeatureMat(featuresMatGLCM90, 3).convertTo(correlacao, CV_8U, 255);
-            imwrite("./debug-data/GLCM90-Entropia.jpg", entropia);
-            imwrite("./debug-data/GLCM90-Energia.jpg", energia);
+            ExtractFeatureMat(featuresMatGLCM90, 0).convertTo(homogeneidade, CV_8U, 255);
             imwrite("./debug-data/GLCM90-Homogeneidade.jpg", homogeneidade);
-            imwrite("./debug-data/GLCM90-Correlacao.jpg", correlacao);
 
-            ExtractFeatureMat(featuresMatGLCM135, 0).convertTo(entropia, CV_8U, 255);
-            ExtractFeatureMat(featuresMatGLCM135, 1).convertTo(energia, CV_8U, 255);
-            ExtractFeatureMat(featuresMatGLCM135, 2).convertTo(homogeneidade, CV_8U, 255);
-            ExtractFeatureMat(featuresMatGLCM135, 3).convertTo(correlacao, CV_8U, 255);
-            imwrite("./debug-data/GLCM135-Entropia.jpg", entropia);
-            imwrite("./debug-data/GLCM135-Energia.jpg", energia);
+            ExtractFeatureMat(featuresMatGLCM135, 0).convertTo(homogeneidade, CV_8U, 255);
             imwrite("./debug-data/GLCM135-Homogeneidade.jpg", homogeneidade);
-            imwrite("./debug-data/GLCM135-Correlacao.jpg", correlacao);
         }
     }
     // Termina GLCM
