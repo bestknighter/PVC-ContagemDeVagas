@@ -4,9 +4,9 @@ using namespace cv;
 
 
 // Começa GLCM (matriz de homogeneidades)
-#define WINDOW_SIZE 16
+#define WINDOW_SIZE 64
 #define LIMIAR_CINZA 32
-#define DISTANCE 2
+#define DISTANCE 3
 #define OFFSET_0 Point(1, 0)
 #define OFFSET_45 Point(1, -1)
 #define OFFSET_90 Point(0, -1)
@@ -23,7 +23,7 @@ Mat ExtractFeatureMat(Mat featuresMat, int featureNum);
 #endif
 #define BIN_THRES 0.5 // Threshold da binarizacao
 #define HOUGH_THRES 300 // Acumulador
-#define TAM_DILATA 6 // Pixels
+#define TAM_DILATA 7 // Pixels
 #define TAM_ERODE 5 // Pixels
 #define TAM_LINHA 1000 // Pixels
 // Termina Hough
@@ -361,8 +361,9 @@ int main(int argc, char** argv){
             imwrite("./debug-data/GLCM135-Correlacao.jpg", correlacao);
         }
     }
-
     // Termina GLCM
+
+    printf("GLCMs computadas. Calculando linhas...\n");
 
     // Começa Hough (Transformada de Hough (rho theta), mesmo alpha)
     {
