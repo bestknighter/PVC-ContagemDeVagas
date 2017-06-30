@@ -33,15 +33,16 @@ Mat ExtractFeatureMat(Mat featuresMat, int featureNum);
 #define MAX_LINE_GAP 5.
 #define TAM_DILATA 7 // Pixels
 #define TAM_ERODE 5 // Pixels
-#define TAM_LINE 2000 // Pixels
+#define TAM_LINE 100 // Pixels
 // Termina Hough
 
 // Começa AKM
-#define LINE_THRES 25.
+#define SENSIBILITY 5.
+#define LINE_THRES 70.
 #define SEGLINE_THRES 50.
 
-std::vector<Vec2f> AKM( std::vector<Vec2f> input, float threshold );
-std::vector<Vec4i> AKM( std::vector<Vec4i> input, float threshold );
+std::vector<Vec2f> AKM( std::vector<Vec2f> input, float threshold, unsigned int minLines = 1 );
+std::vector<Vec4i> AKM( std::vector<Vec4i> input, float threshold, unsigned int minLines = 1 );
 // Termina AKM
 
 int main(int argc, char** argv){
@@ -298,7 +299,7 @@ int main(int argc, char** argv){
 		// Binariza
 		Mat binarizado, gray, operado;
 		cvtColor(mag, gray, COLOR_BGR2GRAY);
-		threshold(gray, binarizado, BIN_THRES, 255, THRESH_BINARY);
+		threshold(gray, binarizado, BIN_THRES, 255, THRESH_BINARY/100);
 		binarizado.convertTo(binarizado, CV_8UC1);
 		// imshow("Hough - binarizado", binarizado);
 		imwrite("./debug-data/hough-binarizado.jpg", binarizado);
@@ -399,7 +400,7 @@ Mat ExtractFeatureMat(Mat featuresMat, int featureNum) {
 // Termina GLCM
 
 // Começa AKM
-std::vector<Vec2f> AKM( std::vector<Vec2f> input, float threshold ) {
+std::vector<Vec2f> AKM( std::vector<Vec2f> input, float threshold, unsigned int minLines ) {
 	std::vector<Vec2f> means;
 	std::vector<unsigned int> amount;
 	means.push_back(input[0]);
@@ -407,9 +408,33 @@ std::vector<Vec2f> AKM( std::vector<Vec2f> input, float threshold ) {
 	for(unsigned int i = 1; i < input.size(); ++i) {
 		unsigned int smallestK = 0;
 		float smallestDist = FLT_MAX;
+
+		Point pt1, pt2;
+		{ // Computa pontos iniciais e finais da linha
+			float rho = input[i][0];
+			float theta = input[i][1];
+
+			double a = cos(theta), b = sin(theta);
+			double x0 = a*rho, y0 = b*rho;
+
+			pt1 = Point(cvRound( x0 + SENSIBILITY*(-b) ), cvRound( y0 + SENSIBILITY*a ));
+			pt2 = Point(cvRound( x0 - SENSIBILITY*(-b) ), cvRound( y0 - SENSIBILITY*a ));
+		}
 		for(unsigned int k = 0; k < means.size(); ++k) {
-			Vec2f distance = input[i] - means[k];
-			float dist = std::sqrt( std::pow(distance[0], 2) + std::pow(distance[1], 2) );
+			Point ptM1, ptM2;
+			{ // Computa pontos iniciais e finais da linha
+				float rho = means[k][0];
+				float theta = means[k][1];
+
+				double a = cos(theta), b = sin(theta);
+				double x0 = a*rho, y0 = b*rho;
+
+				ptM1 = Point(cvRound( x0 + SENSIBILITY*(-b) ), cvRound( y0 + SENSIBILITY*a ));
+				ptM2 = Point(cvRound( x0 - SENSIBILITY*(-b) ), cvRound( y0 - SENSIBILITY*a ));
+			}
+			Point distance1 = pt1 - ptM1;
+			Point distance2 = pt2 - ptM2;
+			float dist = std::sqrt( std::pow(distance1.x, 2) + std::pow(distance1.y, 2) ) + std::sqrt( std::pow(distance2.x, 2) + std::pow(distance2.y, 2) );
 			if(dist < smallestDist) {
 				smallestDist = dist;
 				smallestK = k;
@@ -419,9 +444,32 @@ std::vector<Vec2f> AKM( std::vector<Vec2f> input, float threshold ) {
 			Vec2f oldMean = means[smallestK] * ((float)amount[smallestK]++);
 			means[smallestK] = (oldMean + input[i])/((float)amount[smallestK]);
 			for(unsigned int a = 0; a < means.size(); ++a) {
+				Point pt1, pt2;
+				{ // Computa pontos iniciais e finais da linha
+					float rho = means[a][0];
+					float theta = means[a][1];
+
+					double c = cos(theta), s = sin(theta);
+					double x0 = c*rho, y0 = s*rho;
+
+					pt1 = Point(cvRound( x0 + SENSIBILITY*(-s) ), cvRound( y0 + SENSIBILITY*c ));
+					pt2 = Point(cvRound( x0 - SENSIBILITY*(-s) ), cvRound( y0 - SENSIBILITY*c ));
+				}
 				for(unsigned int b = a+1; b < means.size(); ++b) {
-					Vec2f distance = means[b] - means[a];
-					float dist = std::sqrt( std::pow(distance[0], 2) + std::pow(distance[1], 2) );
+					Point ptM1, ptM2;
+					{ // Computa pontos iniciais e finais da linha
+						float rho = means[b][0];
+						float theta = means[b][1];
+
+						double c = cos(theta), s = sin(theta);
+						double x0 = c*rho, y0 = s*rho;
+
+						ptM1 = Point(cvRound( x0 + SENSIBILITY*(-s) ), cvRound( y0 + SENSIBILITY*c ));
+						ptM2 = Point(cvRound( x0 - SENSIBILITY*(-s) ), cvRound( y0 - SENSIBILITY*c ));
+					}
+					Point distance1 = pt1 - ptM1;
+					Point distance2 = pt2 - ptM2;
+					float dist = std::sqrt( std::pow(distance1.x, 2) + std::pow(distance1.y, 2) ) + std::sqrt( std::pow(distance2.x, 2) + std::pow(distance2.y, 2) );
 					if(dist < threshold) {
 						float newAmount = amount[b]+amount[a];
 						Vec2f newMean = ( means[b]*((float)amount[b]) + means[a]*((float)amount[a]) )/newAmount;
@@ -437,10 +485,16 @@ std::vector<Vec2f> AKM( std::vector<Vec2f> input, float threshold ) {
 			amount.push_back(1);
 		}
 	}
+	for(unsigned int a = 0; a < means.size(); ++a) {
+		if(amount[a] < minLines) {
+			means.erase(means.begin()+a);
+			amount.erase(amount.begin()+ a--);
+		}
+	}
 	return means;
 }
 
-std::vector<Vec4i> AKM( std::vector<Vec4i> input, float threshold ) {
+std::vector<Vec4i> AKM( std::vector<Vec4i> input, float threshold, unsigned int minLines ) {
 	std::vector<Vec4i> means;
 	std::vector<unsigned int> amount;
 	means.push_back(input[0]);
@@ -450,7 +504,7 @@ std::vector<Vec4i> AKM( std::vector<Vec4i> input, float threshold ) {
 		float smallestDist = FLT_MAX;
 		for(unsigned int k = 0; k < means.size(); ++k) {
 			Vec4i distance = input[i] - means[k];
-			float dist = std::sqrt( std::pow(distance[0], 2) + std::pow(distance[1], 2) + std::pow(distance[2], 2) + std::pow(distance[3], 2) );
+			float dist = std::sqrt( std::pow(distance[0], 2) + std::pow(distance[1], 2) ) + std::sqrt( std::pow(distance[2], 2) + std::pow(distance[3], 2) );
 			if(dist < smallestDist) {
 				smallestDist = dist;
 				smallestK = k;
@@ -462,7 +516,7 @@ std::vector<Vec4i> AKM( std::vector<Vec4i> input, float threshold ) {
 			for(unsigned int a = 0; a < means.size(); ++a) {
 				for(unsigned int b = a+1; b < means.size(); ++b) {
 					Vec4i distance = means[b] - means[a];
-					float dist = std::sqrt( std::pow(distance[0], 2) + std::pow(distance[1], 2) + std::pow(distance[2], 2) + std::pow(distance[3], 2) );
+					float dist = std::sqrt( std::pow(distance[0], 2) + std::pow(distance[1], 2) ) + std::sqrt( std::pow(distance[2], 2) + std::pow(distance[3], 2) );
 					if(dist < threshold) {
 						float newAmount = amount[b]+amount[a];
 						Vec4i newMean = ( means[b]*((float)amount[b]) + means[a]*((float)amount[a]) )/newAmount;
@@ -476,6 +530,12 @@ std::vector<Vec4i> AKM( std::vector<Vec4i> input, float threshold ) {
 		} else {
 			means.push_back(input[i]);
 			amount.push_back(1);
+		}
+	}
+	for(unsigned int a = 0; a < means.size(); ++a) {
+		if(amount[a] < minLines) {
+			means.erase(means.begin()+a);
+			amount.erase(amount.begin()+ a--);
 		}
 	}
 	return means;

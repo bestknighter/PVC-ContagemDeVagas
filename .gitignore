@@ -1,2 +1,3 @@
 build/
 include/CMakeVars.hpp
+gmon.out
