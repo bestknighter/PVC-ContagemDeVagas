@@ -24,7 +24,11 @@ Mat ExtractFeatureMat(Mat featuresMat, int featureNum);
 	#define M_PI 3.141592653589793238L
 #endif
 #define BIN_THRES 0.5 // Threshold da binarizacao
+#define DIST_RES 1
+#define ANGLE_RES M_PI/180.
 #define HOUGH_THRES 300 // Acumulador
+#define MIN_LINE_LEN 10.
+#define MAX_LINE_GAP 5.
 #define TAM_DILATA 7 // Pixels
 #define TAM_ERODE 5 // Pixels
 #define TAM_LINE 2000 // Pixels
@@ -304,7 +308,7 @@ int main(int argc, char** argv){
 
 		{ // Acha as linhas por Hough
 			std::vector<Vec2f> lines;
-			HoughLines(operado, lines, 1, M_PI/180., HOUGH_THRES);
+			HoughLines(operado, lines, DIST_RES, ANGLE_RES, HOUGH_THRES);
 			
 			Mat houghWithLines = gray.clone();
 			cvtColor(operado, houghWithLines, COLOR_GRAY2BGR);
@@ -346,7 +350,7 @@ int main(int argc, char** argv){
 
 		{ // Acha os segmentos de linhas por Hough
 			std::vector<Vec4i> segLines;
-			HoughLinesP(operado, segLines, 1, M_PI/180., HOUGH_THRES);
+			HoughLinesP(operado, segLines, DIST_RES, ANGLE_RES, HOUGH_THRES, MIN_LINE_LEN, MAX_LINE_GAP);
 
 			Mat houghWithLines = gray.clone();
 			cvtColor(operado, houghWithLines, COLOR_GRAY2BGR);
