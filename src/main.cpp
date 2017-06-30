@@ -8,6 +8,8 @@ using namespace cv;
 // Começa GLCM (matriz de homogeneidades)
 #define WINDOW_SIZE 32
 #define LIMIAR_CINZA 32
+#define X_STEP 8
+#define Y_STEP 8
 #define DISTANCE 3
 #define OFFSET_0 Point(1, 0)
 #define OFFSET_45 Point(1, -1)
@@ -55,8 +57,6 @@ int main(int argc, char** argv){
 		exit(1);
 	}
 
-	printf("Processando...\n");    
-
 	img.convertTo(img, CV_32F, 1/255.0);
 	
 	// Calculate gradients gx, gy
@@ -64,7 +64,7 @@ int main(int argc, char** argv){
 	Sobel(img, gx, CV_32F, 1, 0, 1);
 	Sobel(img, gy, CV_32F, 0, 1, 1);
 
-	Mat mag, angle; 
+	Mat mag, angle;
 	cartToPolar(gx, gy, mag, angle, 1);
 
 	// imshow("img", img);
@@ -74,8 +74,8 @@ int main(int argc, char** argv){
 	// imshow("angle", angle);
 
 	// Começa GLCM (matriz de homogeneidades)
-	int featuresWidth = img.cols/WINDOW_SIZE;
-	int featuresHeight = img.rows/WINDOW_SIZE;
+	int featuresWidth = std::ceil((img.cols-(WINDOW_SIZE-1))/X_STEP);
+	int featuresHeight = std::ceil((img.rows-(WINDOW_SIZE-1))/Y_STEP);
 	Mat featuresMatGLCM0( {featuresHeight, featuresWidth, NUM_FEATURES}, CV_32F);
 	Mat featuresMatGLCM45( {featuresHeight, featuresWidth, NUM_FEATURES}, CV_32F);
 	Mat featuresMatGLCM90( {featuresHeight, featuresWidth, NUM_FEATURES}, CV_32F);
@@ -93,12 +93,15 @@ int main(int argc, char** argv){
 		float featuresGLCM90[NUM_FEATURES] = {0.};
 		float featuresGLCM135[NUM_FEATURES] = {0.};
 
-		for(int grayY = 0; grayY < gray.rows; grayY += WINDOW_SIZE){ // Faz a janela andar pela imagem
-			for(int grayX = 0; grayX < gray.cols; grayX += WINDOW_SIZE){
-				if(((grayX + WINDOW_SIZE) >= gray.cols) || ((grayY + WINDOW_SIZE) >= gray.rows)){ // Trata erro de janela ficar fora da imagem
-					continue;
-				}
+		printf("Computando GLCMs:\n0%%... ");
 
+		for(int grayY = 0; grayY + WINDOW_SIZE < gray.rows; grayY += Y_STEP){ // Faz a janela andar pela imagem
+
+			if(grayY > gray.rows/2 && grayY - Y_STEP <= gray.rows/2) {
+				printf("50%%... ");
+			}
+
+			for(int grayX = 0; grayX + WINDOW_SIZE < gray.cols; grayX += X_STEP){
 				Point start;
 				Point end;
 
@@ -252,16 +255,16 @@ int main(int argc, char** argv){
 				}
 
 				// SALVAR CARACTERISTICAS
-				{
-					for(int k = 0; k < NUM_FEATURES; k++) {
-						featuresMatGLCM0.at<float>(grayY/WINDOW_SIZE, grayX/WINDOW_SIZE, k) = featuresGLCM0[k];
-						featuresMatGLCM45.at<float>(grayY/WINDOW_SIZE, grayX/WINDOW_SIZE, k) = featuresGLCM45[k];
-						featuresMatGLCM90.at<float>(grayY/WINDOW_SIZE, grayX/WINDOW_SIZE, k) = featuresGLCM90[k];
-						featuresMatGLCM135.at<float>(grayY/WINDOW_SIZE, grayX/WINDOW_SIZE, k) = featuresGLCM135[k];
-					}
+				for(int k = 0; k < NUM_FEATURES; k++) {
+					featuresMatGLCM0.at<float>(grayY/Y_STEP, grayX/X_STEP, k) = featuresGLCM0[k];
+					featuresMatGLCM45.at<float>(grayY/Y_STEP, grayX/X_STEP, k) = featuresGLCM45[k];
+					featuresMatGLCM90.at<float>(grayY/Y_STEP, grayX/X_STEP, k) = featuresGLCM90[k];
+					featuresMatGLCM135.at<float>(grayY/Y_STEP, grayX/X_STEP, k) = featuresGLCM135[k];
 				}
 			}
 		}
+
+		printf("100%%\n");
 
 		{
 			FileStorage ymlFeatures("./debug-data/Features.yml", FileStorage::WRITE);
