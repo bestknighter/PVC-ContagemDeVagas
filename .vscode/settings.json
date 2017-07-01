@@ -32,6 +32,7 @@
         "array": "cpp",
         "fstream": "cpp",
         "iomanip": "cpp",
-        "tuple": "cpp"
+        "tuple": "cpp",
+        "cmakeccompilerid.c": "cpp"
     }
 }

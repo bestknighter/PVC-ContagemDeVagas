@@ -1,5 +1,3 @@
-#include <cfloat>
-
 #include <opencv2/opencv.hpp>
 
 using namespace cv;
@@ -33,16 +31,16 @@ Mat ExtractFeatureMat(Mat featuresMat, int featureNum);
 #define MAX_LINE_GAP 5.
 #define TAM_DILATA 7 // Pixels
 #define TAM_ERODE 5 // Pixels
-#define TAM_LINE 100 // Pixels
+#define TAM_LINE 1000 // Pixels
 // Termina Hough
 
 // Começa AKM
 #define SENSIBILITY 5.
-#define LINE_THRES 70.
-#define SEGLINE_THRES 50.
+#define LINE_THRES 0.5
+#define LINE_MAX_DIST 75
 
-std::vector<Vec2f> AKM( std::vector<Vec2f> input, float threshold, unsigned int minLines = 1 );
-std::vector<Vec4i> AKM( std::vector<Vec4i> input, float threshold, unsigned int minLines = 1 );
+std::vector<Vec2f> AKM( std::vector<Vec2f> input, float threshold, float lineMaxDist = LINE_MAX_DIST, unsigned int minLines = 1 );
+double linesSimilarity( Vec2f lineA, Vec2f lineB, float maxDistance = 50 );
 // Termina AKM
 
 int main(int argc, char** argv){
@@ -333,12 +331,13 @@ int main(int argc, char** argv){
 
 			// Compute e desenha a clusterização adaptativa
 			std::vector<Vec2f> clusters = AKM(lines, LINE_THRES);
+			std::vector<Vec2f> clustersOfClusters = AKM(clusters, 0.9, 100000, 3);
 
 			Mat houghWithClusteredLines = gray.clone();
 			cvtColor(operado, houghWithClusteredLines, COLOR_GRAY2BGR);
-			for( unsigned int i = 0; i < clusters.size(); i++ ) {
-				float rho = clusters[i][0];
-				float theta = clusters[i][1];
+			for( unsigned int i = 0; i < clustersOfClusters.size(); i++ ) {
+				float rho = clustersOfClusters[i][0];
+				float theta = clustersOfClusters[i][1];
 
 				double a = cos(theta), b = sin(theta);
 				double x0 = a*rho, y0 = b*rho;
@@ -350,32 +349,6 @@ int main(int argc, char** argv){
 
 			// imshow("Hough - Linhas Clusterizadas", houghWithClusteredLines);
 			imwrite("./debug-data/hough-linhas-cluster.jpg", houghWithClusteredLines);
-		}
-
-		{ // Acha os segmentos de linhas por Hough
-			std::vector<Vec4i> segLines;
-			HoughLinesP(operado, segLines, DIST_RES, ANGLE_RES, HOUGH_THRES, MIN_LINE_LEN, MAX_LINE_GAP);
-
-			Mat houghWithLines = gray.clone();
-			cvtColor(operado, houghWithLines, COLOR_GRAY2BGR);
-			for( unsigned int i = 0; i < segLines.size(); i++ ) {
-				line( houghWithLines, Point(segLines[i][0], segLines[i][1]), Point(segLines[i][2], segLines[i][3]), Scalar(0,0,255), 1, 8 );
-			}
-
-			// imshow("Hough - Segmento de Linhas", houghWithLines);
-			imwrite("./debug-data/hough-segmentolinhas.jpg", houghWithLines);
-
-			// Compute e desenha a clusterização adaptativa
-			std::vector<Vec4i> clusters = AKM(segLines, SEGLINE_THRES);
-
-			Mat houghWithClusteredLines = gray.clone();
-			cvtColor(operado, houghWithClusteredLines, COLOR_GRAY2BGR);
-			for( unsigned int i = 0; i < clusters.size(); i++ ) {
-				line( houghWithClusteredLines, Point(clusters[i][0], clusters[i][1]), Point(clusters[i][2], clusters[i][3]), Scalar(0,0,255), 2, 8 );
-			}
-
-			// imshow("Hough - Segmento de Linhas Clusterizado", houghWithClusteredLines);
-			imwrite("./debug-data/hough-segmentolinhas-cluster.jpg", houghWithClusteredLines);
 		}
 	}
 	// Termina Hough
@@ -400,77 +373,28 @@ Mat ExtractFeatureMat(Mat featuresMat, int featureNum) {
 // Termina GLCM
 
 // Começa AKM
-std::vector<Vec2f> AKM( std::vector<Vec2f> input, float threshold, unsigned int minLines ) {
+std::vector<Vec2f> AKM( std::vector<Vec2f> input, float threshold, float lineMaxDist, unsigned int minLines ) {
 	std::vector<Vec2f> means;
 	std::vector<unsigned int> amount;
 	means.push_back(input[0]);
 	amount.push_back(1);
 	for(unsigned int i = 1; i < input.size(); ++i) {
-		unsigned int smallestK = 0;
-		float smallestDist = FLT_MAX;
-
-		Point pt1, pt2;
-		{ // Computa pontos iniciais e finais da linha
-			float rho = input[i][0];
-			float theta = input[i][1];
-
-			double a = cos(theta), b = sin(theta);
-			double x0 = a*rho, y0 = b*rho;
-
-			pt1 = Point(cvRound( x0 + SENSIBILITY*(-b) ), cvRound( y0 + SENSIBILITY*a ));
-			pt2 = Point(cvRound( x0 - SENSIBILITY*(-b) ), cvRound( y0 - SENSIBILITY*a ));
-		}
+		unsigned int closestK = 0;
+		double biggestSimilarity = 0.;
 		for(unsigned int k = 0; k < means.size(); ++k) {
-			Point ptM1, ptM2;
-			{ // Computa pontos iniciais e finais da linha
-				float rho = means[k][0];
-				float theta = means[k][1];
-
-				double a = cos(theta), b = sin(theta);
-				double x0 = a*rho, y0 = b*rho;
-
-				ptM1 = Point(cvRound( x0 + SENSIBILITY*(-b) ), cvRound( y0 + SENSIBILITY*a ));
-				ptM2 = Point(cvRound( x0 - SENSIBILITY*(-b) ), cvRound( y0 - SENSIBILITY*a ));
-			}
-			Point distance1 = pt1 - ptM1;
-			Point distance2 = pt2 - ptM2;
-			float dist = std::sqrt( std::pow(distance1.x, 2) + std::pow(distance1.y, 2) ) + std::sqrt( std::pow(distance2.x, 2) + std::pow(distance2.y, 2) );
-			if(dist < smallestDist) {
-				smallestDist = dist;
-				smallestK = k;
+			double similarity = linesSimilarity(input[i], means[k], lineMaxDist);
+			if(similarity > biggestSimilarity) {
+				biggestSimilarity = similarity;
+				closestK = k;
 			}
 		}
-		if(smallestDist < threshold) {
-			Vec2f oldMean = means[smallestK] * ((float)amount[smallestK]++);
-			means[smallestK] = (oldMean + input[i])/((float)amount[smallestK]);
+		if(biggestSimilarity > threshold) {
+			Vec2f oldMean = means[closestK] * ((float)amount[closestK]++);
+			means[closestK] = (oldMean + input[i])/((float)amount[closestK]);
 			for(unsigned int a = 0; a < means.size(); ++a) {
-				Point pt1, pt2;
-				{ // Computa pontos iniciais e finais da linha
-					float rho = means[a][0];
-					float theta = means[a][1];
-
-					double c = cos(theta), s = sin(theta);
-					double x0 = c*rho, y0 = s*rho;
-
-					pt1 = Point(cvRound( x0 + SENSIBILITY*(-s) ), cvRound( y0 + SENSIBILITY*c ));
-					pt2 = Point(cvRound( x0 - SENSIBILITY*(-s) ), cvRound( y0 - SENSIBILITY*c ));
-				}
 				for(unsigned int b = a+1; b < means.size(); ++b) {
-					Point ptM1, ptM2;
-					{ // Computa pontos iniciais e finais da linha
-						float rho = means[b][0];
-						float theta = means[b][1];
-
-						double c = cos(theta), s = sin(theta);
-						double x0 = c*rho, y0 = s*rho;
-
-						ptM1 = Point(cvRound( x0 + SENSIBILITY*(-s) ), cvRound( y0 + SENSIBILITY*c ));
-						ptM2 = Point(cvRound( x0 - SENSIBILITY*(-s) ), cvRound( y0 - SENSIBILITY*c ));
-					}
-					Point distance1 = pt1 - ptM1;
-					Point distance2 = pt2 - ptM2;
-					float dist = std::sqrt( std::pow(distance1.x, 2) + std::pow(distance1.y, 2) ) + std::sqrt( std::pow(distance2.x, 2) + std::pow(distance2.y, 2) );
-					if(dist < threshold) {
+					double similarity = linesSimilarity(means[a], means[b], LINE_MAX_DIST);
+					if(similarity > threshold) {
 						float newAmount = amount[b]+amount[a];
 						Vec2f newMean = ( means[b]*((float)amount[b]) + means[a]*((float)amount[a]) )/newAmount;
 						means[a] = newMean;
@@ -494,50 +418,9 @@ std::vector<Vec2f> AKM( std::vector<Vec2f> input, float threshold, unsigned int 
 	return means;
 }
 
-std::vector<Vec4i> AKM( std::vector<Vec4i> input, float threshold, unsigned int minLines ) {
-	std::vector<Vec4i> means;
-	std::vector<unsigned int> amount;
-	means.push_back(input[0]);
-	amount.push_back(1);
-	for(unsigned int i = 1; i < input.size(); ++i) {
-		unsigned int smallestK = 0;
-		float smallestDist = FLT_MAX;
-		for(unsigned int k = 0; k < means.size(); ++k) {
-			Vec4i distance = input[i] - means[k];
-			float dist = std::sqrt( std::pow(distance[0], 2) + std::pow(distance[1], 2) ) + std::sqrt( std::pow(distance[2], 2) + std::pow(distance[3], 2) );
-			if(dist < smallestDist) {
-				smallestDist = dist;
-				smallestK = k;
-			}
-		}
-		if(smallestDist < threshold) {
-			Vec4i oldMean = means[smallestK] * ((float)amount[smallestK]++);
-			means[smallestK] = (oldMean + input[i])/((float)amount[smallestK]);
-			for(unsigned int a = 0; a < means.size(); ++a) {
-				for(unsigned int b = a+1; b < means.size(); ++b) {
-					Vec4i distance = means[b] - means[a];
-					float dist = std::sqrt( std::pow(distance[0], 2) + std::pow(distance[1], 2) ) + std::sqrt( std::pow(distance[2], 2) + std::pow(distance[3], 2) );
-					if(dist < threshold) {
-						float newAmount = amount[b]+amount[a];
-						Vec4i newMean = ( means[b]*((float)amount[b]) + means[a]*((float)amount[a]) )/newAmount;
-						means[a] = newMean;
-						amount[a] = newAmount;
-						means.erase(means.begin()+b);
-						amount.erase(amount.begin()+ b--);
-					}
-				}
-			}
-		} else {
-			means.push_back(input[i]);
-			amount.push_back(1);
-		}
-	}
-	for(unsigned int a = 0; a < means.size(); ++a) {
-		if(amount[a] < minLines) {
-			means.erase(means.begin()+a);
-			amount.erase(amount.begin()+ a--);
-		}
-	}
-	return means;
+double linesSimilarity(Vec2f lineA, Vec2f lineB, float maxDistance) {
+	double angleSim = 1 - std::abs(lineA[1] - lineB[1])/(M_PI/2);
+	double distSim = 1 - std::abs(lineA[0] - lineB[0])/maxDistance;
+	return angleSim * (distSim > 0 ? distSim : 0);
 }
 // Termina AKM
