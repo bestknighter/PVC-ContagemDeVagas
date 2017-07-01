@@ -31,7 +31,7 @@ Mat ExtractFeatureMat(Mat featuresMat, int featureNum);
 #define MAX_LINE_GAP 5.
 #define TAM_DILATA 7 // Pixels
 #define TAM_ERODE 5 // Pixels
-#define TAM_LINE 1000 // Pixels
+#define TAM_LINE 3000 // Pixels
 // Termina Hough
 
 // Começa AKM
@@ -40,6 +40,7 @@ Mat ExtractFeatureMat(Mat featuresMat, int featureNum);
 #define LINE_MAX_DIST 75
 
 std::vector<Vec2f> AKM( std::vector<Vec2f> input, float threshold, float lineMaxDist = LINE_MAX_DIST, unsigned int minLines = 1 );
+void FilterByAKM( std::vector<Vec2f>& input, float threshold, float lineMaxDist = LINE_MAX_DIST, unsigned int minLines = 1 );
 double linesSimilarity( Vec2f lineA, Vec2f lineB, float maxDistance = 50 );
 // Termina AKM
 
@@ -331,13 +332,13 @@ int main(int argc, char** argv){
 
 			// Compute e desenha a clusterização adaptativa
 			std::vector<Vec2f> clusters = AKM(lines, LINE_THRES);
-			std::vector<Vec2f> clustersOfClusters = AKM(clusters, 0.9, 100000, 3);
+			FilterByAKM(clusters, 0.9, 100000, 2);
 
 			Mat houghWithClusteredLines = gray.clone();
 			cvtColor(operado, houghWithClusteredLines, COLOR_GRAY2BGR);
-			for( unsigned int i = 0; i < clustersOfClusters.size(); i++ ) {
-				float rho = clustersOfClusters[i][0];
-				float theta = clustersOfClusters[i][1];
+			for( unsigned int i = 0; i < clusters.size(); i++ ) {
+				float rho = clusters[i][0];
+				float theta = clusters[i][1];
 
 				double a = cos(theta), b = sin(theta);
 				double x0 = a*rho, y0 = b*rho;
@@ -416,6 +417,22 @@ std::vector<Vec2f> AKM( std::vector<Vec2f> input, float threshold, float lineMax
 		}
 	}
 	return means;
+}
+
+void FilterByAKM( std::vector<Vec2f>& input, float threshold, float lineMaxDist, unsigned int minLines ) {
+	std::vector<Vec2f> clusters = AKM(input, threshold, lineMaxDist, minLines);
+	for(unsigned int i = 1; i < input.size(); ++i) {
+		double biggestSimilarity = 0.;
+		for(unsigned int k = 0; k < clusters.size(); ++k) {
+			double similarity = linesSimilarity(input[i], clusters[k], lineMaxDist);
+			if(similarity > biggestSimilarity) {
+				biggestSimilarity = similarity;
+			}
+		}
+		if(biggestSimilarity < threshold) {
+			input.erase(input.begin()+ i--);
+		}
+	}
 }
 
 double linesSimilarity(Vec2f lineA, Vec2f lineB, float maxDistance) {
