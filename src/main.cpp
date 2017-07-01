@@ -4,6 +4,7 @@ using namespace cv;
 
 
 // Começa GLCM (matriz de homogeneidades)
+
 #define WINDOW_SIZE 32
 #define LIMIAR_CINZA 32
 #define X_STEP 8
@@ -17,9 +18,11 @@ using namespace cv;
 #define FEATURES_ORDER "homogeneidade"
 
 Mat ExtractFeatureMat(Mat featuresMat, int featureNum);
+
 // Termina GLCM
 
 // Começa Hough (Transformada de Hough (rho theta), mesmo alpha)
+
 #ifndef M_PI
 	#define M_PI 3.141592653589793238L
 #endif
@@ -32,9 +35,11 @@ Mat ExtractFeatureMat(Mat featuresMat, int featureNum);
 #define TAM_DILATA 7 // Pixels
 #define TAM_ERODE 5 // Pixels
 #define TAM_LINE 3000 // Pixels
+
 // Termina Hough
 
 // Começa AKM
+
 #define SENSIBILITY 5.
 #define LINE_THRES 0.5
 #define LINE_MAX_DIST 75
@@ -42,6 +47,7 @@ Mat ExtractFeatureMat(Mat featuresMat, int featureNum);
 std::vector<Vec2f> AKM( std::vector<Vec2f> input, float threshold, float lineMaxDist = LINE_MAX_DIST, unsigned int minLines = 1 );
 void FilterByAKM( std::vector<Vec2f>& input, float threshold, float lineMaxDist = LINE_MAX_DIST, unsigned int minLines = 1 );
 double linesSimilarity( Vec2f lineA, Vec2f lineB, float maxDistance = 50 );
+
 // Termina AKM
 
 int main(int argc, char** argv){
@@ -289,11 +295,13 @@ int main(int argc, char** argv){
 			imwrite("./debug-data/GLCM135-Homogeneidade.jpg", homogeneidade);
 		}
 	}
+
 	// Termina GLCM
 
 	printf("GLCMs computadas. Calculando linhas...\n");
 
 	// Começa Hough (Transformada de Hough (rho theta), mesmo alpha)
+
 	{
 		// Binariza
 		Mat binarizado, gray, operado;
@@ -352,6 +360,7 @@ int main(int argc, char** argv){
 			imwrite("./debug-data/hough-linhas-cluster.jpg", houghWithClusteredLines);
 		}
 	}
+
 	// Termina Hough
 
 	waitKey(0);
@@ -360,6 +369,7 @@ int main(int argc, char** argv){
 }
 
 // Começa GLCM (matriz de homogeneidades)
+
 Mat ExtractFeatureMat(Mat featuresMat, int featureNum) {
 	int sizeY = featuresMat.size[0];
 	int sizeX = featuresMat.size[1];
@@ -371,9 +381,11 @@ Mat ExtractFeatureMat(Mat featuresMat, int featureNum) {
 	}
 	return feature;
 }
+
 // Termina GLCM
 
 // Começa AKM
+
 std::vector<Vec2f> AKM( std::vector<Vec2f> input, float threshold, float lineMaxDist, unsigned int minLines ) {
 	std::vector<Vec2f> means;
 	std::vector<unsigned int> amount;
@@ -440,4 +452,5 @@ double linesSimilarity(Vec2f lineA, Vec2f lineB, float maxDistance) {
 	double distSim = 1 - std::abs(lineA[0] - lineB[0])/maxDistance;
 	return angleSim * (distSim > 0 ? distSim : 0);
 }
+
 // Termina AKM
