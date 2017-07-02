@@ -1,0 +1,325 @@
+\documentclass[10pt,twocolumn,letterpaper]{article}
+
+\usepackage[utf8]{inputenc}
+\usepackage{cvpr}
+\usepackage{times}
+\usepackage{epsfig}
+\usepackage{graphicx}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{listings}
+\usepackage{color}
+\usepackage{multirow}
+\usepackage{mathtools}
+\usepackage[table,xcdraw]{xcolor}
+\usepackage{url}
+
+\definecolor{commentcolor}{rgb}{0.64,0.61,0.55}
+\definecolor{numbercolor}{rgb}{0.5,0.37,0.12}
+\definecolor{stringcolor}{rgb}{0.24,0.60,0.78}
+\definecolor{backcolour}{rgb}{0.98,0.97,0.96}
+\definecolor{textcolor}{rgb}{0.43, 0.30, 0.04}
+\definecolor{keywordcolor}{rgb}{0.08,0.31,0.55}
+
+\lstdefinestyle{mystyle}{
+    backgroundcolor=\color{backcolour},
+    commentstyle=\color{commentcolor},
+    keywordstyle=\color{keywordcolor},
+    numberstyle=\tiny\color{numbercolor},
+    stringstyle=\color{stringcolor},
+    basicstyle=\footnotesize\color{textcolor},
+    breakatwhitespace=false,
+    breaklines=true,
+    captionpos=b,
+    keepspaces=true,
+    numbers=left,
+    numbersep=5pt,
+    showspaces=false,       
+    showstringspaces=false,
+    showtabs=false,
+    tabsize=2
+}
+ 
+\lstset{style=mystyle}
+
+% Include other packages here, before hyperref.
+
+% If you comment hyperref and then uncomment it, you should delete
+% egpaper.aux before re-running latex.  (Or just hit 'q' on the first latex
+% run, let it finish, and you should be clear).
+\usepackage[breaklinks=true,bookmarks=false]{hyperref}
+
+\cvprfinalcopy % *** Uncomment this line for the final submission
+
+\def\cvprPaperID{****} % *** Enter the CVPR Paper ID here
+\def\httilde{\mbox{\tt\raisebox{-.5ex}{\symbol{126}}}}
+
+% Pages are numbered in submission mode, and unnumbered in camera-ready
+%\ifcvprfinal\pagestyle{empty}\fi
+\setcounter{page}{1}
+\begin{document}
+
+%%%%%%%%% TITLE
+\title{Contagem de vagas em estacionamentos}
+
+Princípios de Visão Computacional\\
+3 de Junho de 2017
+
+\author{Daniel Marcos Botelho Barbosa\\
+17/0052427\\
+{\tt\small DanielM.B.Barbosa@hotmail.com}\\
+% For a paper whose authors are all at the same institution,
+% omit the following lines up until the closing ``}''.
+% Additional authors and addresses can be added with ``\and'',
+% just like the second author.
+% To save space, use either the email address or home page, not both
+\and
+Gabriel Filipe Botelho Barbosa\\
+12/0050935\\
+{\tt\small gabrielfbbarbosa@gmail.com}
+}
+
+\maketitle
+%\thispagestyle{empty}
+
+
+
+
+
+
+%%%%%%%%% ABSTRACT
+\begin{abstract}
+	Este projeto se caracteriza como uma pesquisa sobre um método de contagem
+de vagas na área da visão computacional sem a utilização de inteligência artificial.
+
+	Várias das atividades no campo de visão computacional se apoiam em atividades
+menores. Com isso, é bastante notório que o processo de contagem de vagas em um
+estacionamento tem uma grande abrangência no campo de estudos, não apenas da
+visão computacional. Técnicas como análise de texturas, detecção de gradiente,
+processamento morfológico (binarização e limiarização), extração de características
+e clusterização estão bem presentes neste trabalho.
+
+	As tarefas realizadas envolvem desde abrir uma imagem simples do tipo \verb'BGR'
+até as mais diversas técnicas para o desenvolvimento de uma solução da problemática.
+Para isso, a liguagem utilizada foi C++ com o padrão C++ 11 e a versão 3.2.0 do OpenCV.\\
+\end{abstract}
+
+
+
+
+
+%%%%%%%%% BODY TEXT
+\section{Objetivos}
+
+	O objetivo principal o desenvolvimento desse projeto é chegar à uma solução sobre
+a precisão e o resultado do processo utilizado para a contagem das vagas. Além disso, a
+atividade como um todo objetiva a exploração dos conceitos aprendidos ao longo do curso
+de Princípios de Visão Computacional e ferramentas disponíveis na biblioteca em questão,
+OpenCV{\footnotesize \cite{opencv}}. Com isso, tornar afim delas.
+
+
+
+Para se obter esse resultado, foi
+realizado o seguinte procedimento:
+
+\begin{description}
+\item [Etapa 1] Abrir uma imagem, detectar suas bordas usando os três detectores mencionados e exibir o resultado.
+\item [Etapa 2] Binarizar os resultados da etapa anterior, salvá-las, carregar a imagem \emph{ground truth} e exibir todas essas imagens.
+\item [Etapa 3] Calcular a precisão de cada detector e imprimir o resultado no console.
+\end{description}
+
+Os parâmetros de cada detector de borda não foram alterados para cada uma das 6 imagens em escala de cinza fornecidas. Isso significa que nenhum dos detectores estava em sua configuração ideal para cada imagem. O impacto sobre o resultado é óbvio mas está aberto à discussão se é um impacto justo ou não.
+
+%-------------------------------------------------------------------------
+
+\section{Introdução}
+Dos procedimentos que foram realizadas para se obter o resultado final, três terão sua teoria abordadas superficialmente abaixo. São eles a detecção de borda, a binarização e o cálculo da precisão de cada detector.
+
+\subsection{Detecção de borda}
+O processo de detecção de borda é largamente utilizado em visão computacional.\cite{theory} Esse processo consiste em encontrar a borda, os limites, dos objetos contidos na imagem e geralmente é utilizado para realizar a segmentação de objetos da imagem. Os algoritmos mais utilizados atualmente são discutidos a seguir.
+
+\paragraph{Sobel}
+O detector de bordas de Sobel se basea em algumas alterações e adaptações do operador matemático Laplaciano para um espaço dimensional discreto e bidimensional. O efeito desse operador no espectro matemático é o mesmo quando aplicado numa imagem, ou seja, ele ameniza variações de baixa frequência e atenua variações de alta frequência.\cite{sobel}
+
+Ele realiza esse procedimento realizando uma convolução nos eixos da imagem usando um \emph{kernel} direcional e realizando a média dos resultados. Ele é geralmente quadrado com tamanho ímpar, comumente 3, onde a soma de todos os elementos é 0.
+
+\begin{figure}[!htp]
+\centering
+\includegraphics[width=0.5\columnwidth]{SobelGx}
+\caption{Operador Sobel horizontal para imagens bidimensionais}
+\label{fig:SobelGx}
+\end{figure}
+
+Além disso, se considerarmos o \emph{kernel} utilizado para computador o gradiente horizontal (Figure \ref{fig:SobelGx}), ou seja, na coordenada $x$, todos os elementos da coluna central será 0. Todos os \emph{kernels} não são nada além de uma rotação ao redor do pixel central de algum outro.
+
+\paragraph{Canny}
+Diferentemente do algoritmo de Sobel, o algoritmo de Canny em si consiste de muito mais etapas para se obter o resultado final. A vantagem dele com relação aos outros é que as bordas detectadas sempre possuirão somente um pixel de largura.
+
+A primeira etapa é igual ao de detectores por gradiente, borrar e convoluir. No caso de Canny, a convolução é idêntica ao de Sobel. Logo após é aplicada uma limiarização na imagem e remoção de pixels não máximos, ou seja, se um pixel vizinho for maior que ele na direção da borda, sete o pixel para 0. Por último é aplicado duas binarizações com valores de \emph{threshold} diferentes. O que possuir o \emph{threshold} menor terá uma maior quantidade de falsos positivos para bordas, já a outra terá uma quantidade maior de falso negativos.
+
+A imagem final consiste da imagem binarizada com o \emph{threshold} maior unida com os elementos da imagem com o \emph{threshold} menor que se conectam com alguma borda da outra.\cite{canny}
+
+\paragraph{Laplace}
+O detector de bordas de Laplace se utiliza da operação matemática de Gradiente muito utilizada em cálculo, o Laplaciano. Esse detector de bordas, diferentemente do de Sobel, detecta de todas as direções simultaneamente (Figure \ref{fig:LaplaceKernel}, além de que o resultado final ser calculado de forma diferente também. No caso do detector de bordas Laplaciano, uma borda é quando o pixel resultante da convolução é um cruzamento por zero, ou seja, se os pixels ao redor possuem sinais opostos.\cite{laplace}
+
+\begin{figure}[!htp]
+\centering
+\includegraphics[width=\columnwidth]{LaplaceKernel}
+\caption{Operador Laplaciano}
+\label{fig:LaplaceKernel}
+\end{figure}
+
+\subsection{Binarização}
+A binarização realizada após as detecções serem finalizadas foi trivial, mas merece ser rapidamente explicada pois o valor final não foi 0 ou 1. Para que fosse possível se visualizar a binarização, ela foi escalada de forma que 1 seja 255 mas que não possua nenhum outro número entre 255 e 0. Ou seja, todo pixel maior que um \emph{threshold} determinado seria setado como 255, e 0 caso contrário.
+
+\subsection{Cálculo de precisão}
+Uma forma simples de se calcular o quão preciso um detector de borda é, quando comparado a um \emph{ground truth}, computar quantos pixels obtidos são iguais e dividir pela quantidade total de pixels existente. Portanto, uma imagem idêntica ao \emph{ground truth} resultaria em precisão 1. Já uma imagem oposta teria precisão 0. A equação \ref{eq:score} é que foi utilizada para se obter a precisão de cada detector, por imagem.
+
+\begin{equation}
+precision = PixelsHit/NumPixels
+\label{eq:score}
+\end{equation}
+
+\section{Metodologia Empregada}
+Como todos os detectores de borda precisam de uma imagem em escala de cinza e levemente suavizada, esse foi a primeira etapa. A biblioteca OpenCV possue funções para cada um desses operadores, logo, detectar as bordas passou a ser algo extremamente trivial como 5 ou menos linhas de código, como demonstrado no código em Listing \ref{code:sobel}.
+
+\begin{lstlisting}[language=C++, caption={Obtenção das bordas por Sobel. Esse foi o maior procedimento dos três.}, label={code:sobel}]
+Mat gradientX, gradientY;
+Sobel( blurred, gradientX, S_DEPTH, 1, 0,
+       S_KSIZE, S_SCALE, S_DELTA, BORDER_DEFAULT );
+Sobel( blurred, gradientY, S_DEPTH, 0, 1,
+       S_KSIZE, S_SCALE, S_DELTA,
+       BORDER_DEFAULT );
+convertScaleAbs( gradientX, gradientX );
+convertScaleAbs( gradientY, gradientY );
+
+Mat sobel;
+addWeighted( gradientX, 0.5, gradientY, 0.5,
+             0, sobel );
+\end{lstlisting}
+
+Para o cálculo da precisão de cada um deles, o loop foi unificado para que somente em uma iteração já fosse possível computador todos os hits. Para evitar problemas com artefatos de compressão, a imagem \emph{ground truth} também foi binarizada antes desse cálculo.
+
+\begin{lstlisting}[language=C++, caption={Obtendo precisão dos detectores}, label={code:calcprec}]
+int sobelHit = 0;
+int cannyHit = 0;
+int laplaceHit = 0;
+for ( int j = 0; j < image.rows; ++j ) {
+ for ( int i = 0; i < image.cols; ++i ) {
+  uchar gtPixel = gt.at<uchar>( j, i );
+  sobelHit += (thresSobel.at<uchar>( j, i ) == gtPixel) ? 1 : 0;
+  cannyHit += (thresCanny.at<uchar>( j, i ) == gtPixel) ? 1 : 0;
+  laplaceHit += (thresLaplace.at<uchar>( j, i ) == gtPixel) ? 1 : 0;
+ }
+}
+
+float numPix = image.rows * image.cols;
+float precSobel = sobelHit/numPix;
+float precCanny = cannyHit/numPix;
+float precLaplace = laplaceHit/numPix;
+\end{lstlisting}
+
+Abaixo, no Listing \ref{code:defs}, está as configurações usadas para cada detector de borda. Importante lembrar que eles não foram modificados dependendo da imagem utilizada. Na próxima seção isso será discutido o efeitos dessa decisão.
+
+\begin{lstlisting}[language=C++, caption={Parâmetros passados para os detectores}, label={code:defs}]
+// Sobel
+#define S_SIZE Size(3,3)
+#define S_DEPTH CV_16S
+#define S_SCALE 1
+#define S_DELTA 0
+#define S_KSIZE 3
+
+// Canny
+#define C_THRES 30
+#define C_RATIO 3
+#define C_KSIZE 3
+
+// Laplace
+#define L_SIZE Size(3,3)
+#define L_DEPTH CV_16S
+#define L_SCALE 1
+#define L_DELTA 0
+#define L_KSIZE 3
+
+// Binary Threshold
+#define BIN_THRES 60
+\end{lstlisting}
+
+\section{Resultados}
+Após realizar o teste com cada uma das imagens e se obter a precisão para cada detector, a tabela \ref{tab:result} compila todos eles de forma organizada para se poder comparar as diferenças de uma forma não-empírica.
+
+\begin{table}[!htp]
+\centering
+\resizebox{\linewidth}{!}{%
+\begin{tabular}{|l|l|l|l|l|l|l|}
+\hline
+\multirow{2}{*}{Detectores} & \multicolumn{6}{l|}{Imagens}                                    \\ \cline{2-7} 
+                          & 46       & 140      & 208      & 212      & 217      & 221      \\ \hline
+Sobel                     & 0.902598 & 0.823201 & 0.834766 & 0.825176 & 0.901705 & 0.904328 \\ \hline
+Canny                     & 0.967755 & 0.901883 & 0.873035 & 0.841835 & 0.938034 & 0.943913 \\ \hline
+Laplace                   & 0.859735 & 0.756041 & 0.731960 & 0.821448 & 0.882921 & 0.858020 \\ \hline
+\end{tabular}%
+}
+\caption{Precisão obtida com cada detector por imagem}
+\label{tab:result}
+\end{table}
+
+E a seguir estão as imagens-exemplo de como cada um de seus detectores se comportou.
+
+\begin{figure}[!htb]
+\minipage{0.475\linewidth}
+  \includegraphics[width=\linewidth]{46.jpg}
+  \caption{Imagem Original}\label{fig:orig}
+\endminipage\hfill
+\minipage{0.475\linewidth}
+  \includegraphics[width=\linewidth]{46gt.jpg}
+  \caption{Ground Truth}\label{fig:gt}
+\endminipage
+\end{figure}
+
+\begin{figure}[!htb]
+\minipage{0.475\linewidth}
+  \includegraphics[width=\linewidth]{46-sobeln.jpg}
+  \caption{Sobel}\label{fig:sobeln}
+\endminipage\hfill
+\minipage{0.475\linewidth}
+  \includegraphics[width=\linewidth]{46-sobelb.jpg}
+  \caption{Sobel Binarizado}\label{fig:sobelb}
+\endminipage
+\end{figure}
+
+\begin{figure}[!htb]
+\minipage{0.475\linewidth}
+  \includegraphics[width=\linewidth]{46-cannyn.jpg}
+  \caption{Canny}\label{fig:cannyn}
+\endminipage\hfill
+\minipage{0.475\linewidth}
+  \includegraphics[width=\linewidth]{46-cannyb.jpg}
+  \caption{Canny Binarizado}\label{fig:cannyb}
+\endminipage
+\end{figure}
+
+\begin{figure}[!htb]
+\minipage{0.475\linewidth}
+  \includegraphics[width=\linewidth]{46-laplacen.jpg}
+  \caption{Laplace}\label{fig:laplacen}
+\endminipage\hfill
+\minipage{0.475\linewidth}
+  \includegraphics[width=\linewidth]{46-laplaceb.jpg}
+  \caption{Laplace Binarizado}\label{fig:laplaceb}
+\endminipage
+\end{figure}
+
+\section{Conclusões}
+Ao final, observando a tabela \ref{tab:result}, é possível perceber que o detector de bordas de Canny possue a maior precisão dentre os três. Entretanto, o resultado obtido nesse experimento pode estar enviesado. Isso porquê, ao se observar a imagem \emph{ground truth}, é possível perceber que foi gerada usando um detector de borda Canny, porém com seus parâmetros otimizados para a imagem. Isso significa que o detector de Canny, nesse experimento, provavelmente sempre obterá um resultado melhor.
+
+E isso leva ao segundo ponto de que, nesse experimento, os parâmetros de cada detector não são ajustados para os valores ótimos de cada imagem. Isso fornece uma competição mais cega mas talvez resulte em uma comparação não tão justa, visto que não representa o caso de uso real da maioria das aplicações e ótimo de cada um deles. Esse ponto poderia ser mitigado ao tentar encontrar os parâmetros de cada detector, por imagem, que resultem na maior precisão possível para eles.
+
+Considerando todas as ressalvas, o detector de Canny ainda assim pode ser considerado o melhor para a maioria dos casos, se o objetivo é precisão.
+
+{\small
+\bibliographystyle{ieee}
+\bibliography{contagem-vagas-ref}
+}
+
+\end{document}
