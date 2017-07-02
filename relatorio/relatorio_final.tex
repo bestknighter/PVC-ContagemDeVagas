@@ -59,7 +59,10 @@
 \setcounter{page}{1}
 \begin{document}
 
-%%%%%%%%% TITLE
+
+
+
+%%%%%%%%	TITLE
 \title{Contagem de vagas em estacionamentos}
 
 Princípios de Visão Computacional\\
@@ -87,7 +90,7 @@ Gabriel Filipe Botelho Barbosa\\
 
 
 
-%%%%%%%%% ABSTRACT
+%%%%%%%%	ABSTRACT
 \begin{abstract}
 	Este projeto se caracteriza como uma pesquisa sobre um método de contagem
 de vagas na área da visão computacional sem a utilização de inteligência artificial.
@@ -108,7 +111,7 @@ Para isso, a liguagem utilizada foi C++ com o padrão C++ 11 e a versão 3.2.0 d
 
 
 
-%%%%%%%%% BODY TEXT
+%%%%%%%%	BODY TEXT
 \section{Objetivos}
 
 	O objetivo principal o desenvolvimento desse projeto é chegar à uma solução sobre
@@ -119,24 +122,100 @@ OpenCV{\footnotesize \cite{opencv}}. Com isso, tornar afim delas.
 
 
 
-Para se obter esse resultado, foi
-realizado o seguinte procedimento:
+
+
+%%%%%%%%	INTRODUÇÃO
+\section{Introdução}
+
+	Para se obter esse resultado da contagem, foi realizado um procedimento complexo
+desde detecção de gradiente até criação de algorítmos para determinar a similaridade de
+duas retas. O procedimento desta metodologia foi o seguinte:
+
 
 \begin{description}
-\item [Etapa 1] Abrir uma imagem, detectar suas bordas usando os três detectores mencionados e exibir o resultado.
-\item [Etapa 2] Binarizar os resultados da etapa anterior, salvá-las, carregar a imagem \emph{ground truth} e exibir todas essas imagens.
-\item [Etapa 3] Calcular a precisão de cada detector e imprimir o resultado no console.
+\item [Etapa 1] Abre uma imagem de estacionamento;
+\item [Etapa 2] Calcula as matrizes GLCM's;
+\item [Etapa 3] Aplica o algorítmo de detecção {\em Sobel Detector}{\footnotesize \cite{sobel1}};
+\item [Etapa 4] A partir de Sobel, aplica {\em Hough Line Transform};
+\item [Etapa 5] A partir de Sobel, calcula a Transformada Probabilística de Hough.
 \end{description}
 
-Os parâmetros de cada detector de borda não foram alterados para cada uma das 6 imagens em escala de cinza fornecidas. Isso significa que nenhum dos detectores estava em sua configuração ideal para cada imagem. O impacto sobre o resultado é óbvio mas está aberto à discussão se é um impacto justo ou não.
 
-%-------------------------------------------------------------------------
+%%%	IMAGEM 1	%%%
+\begin{figure}[!htb]
+\centering
+\includegraphics[scale=0.6]{introducao.png}
+\caption{Diagrama em árvore da ordem e disposição das etapas realizadas.}
+\label{Rotulo}
+\end{figure}
 
-\section{Introdução}
-Dos procedimentos que foram realizadas para se obter o resultado final, três terão sua teoria abordadas superficialmente abaixo. São eles a detecção de borda, a binarização e o cálculo da precisão de cada detector.
 
-\subsection{Detecção de borda}
-O processo de detecção de borda é largamente utilizado em visão computacional.\cite{theory} Esse processo consiste em encontrar a borda, os limites, dos objetos contidos na imagem e geralmente é utilizado para realizar a segmentação de objetos da imagem. Os algoritmos mais utilizados atualmente são discutidos a seguir.
+
+
+\section{Trabalhos relevantes}
+
+
+
+\section{Metodologia proposta}
+análise de texturas, detecção de gradiente,
+processamento morfológico (binarização e limiarização), extração de características
+e clusterização
+
+\subsection{Análise de texturas}
+
+	As medidas de textura de co-ocorrência de nível de cinza têm sido a força de trabalho
+da textura da imagem desde que foram propostas por Haralick{\footnotesize \cite{haralick}}
+na década de 1970.
+
+	Uma matriz de co-ocorrência, ou distribuição de co-ocorrência,{\footnotesize \cite{GLCM-tutorial}}
+é uma matriz que é definida sobre uma imagem para ser a distribuição de valores de pixel
+co-ocorrentes (valores de tons de cinza ou cores) a um dado deslocamento. Esta matriz
+aproxima a distribuição de probabilidade conjunta de um par de pixels.
+
+	Ela representa a relação entre distância e relação de angulação espacial sobre uma
+sub-relação de imagem de uma região específica e de tamanho específico. Ou seja, com
+essa matriz de coocorrência é possível detectar, de certa forma, a textura de objetos
+capturados em uma imagem. Neste projeto terão quatro matrizes finais que serão obtidas
+pelas direções 0º, 45º, 90º e 135º, em ambos sentidos.
+
+
+\subsection{Detecção de gradiente}
+	
+	O pré-processamento da imagem foi realizado com o algorítmo de Sobel.
+\paragraph{Sobel}
+	O detector de bordas de Sobel{footnotesize \cite{sobel1}} se basea em algumas
+alterações e adaptações do operador matemático Laplaciano{\footnotesize \cite{laplace1}}
+para um espaço dimensional discreto e bidimensional{\footnotesize \cite{laplace2}}. O
+efeito desse operador no espectro matemático é o mesmo quando aplicado numa imagem,
+ou seja, ele ameniza variações de baixa frequência e atenua variações de alta frequência.{\footnotesize \cite{sobel2}}
+
+	Ele realiza esse procedimento realizando uma convolução nos eixos da imagem
+usando um \emph{kernel} direcional e realizando a média dos resultados. Ele é,
+geralmente, quadrado com tamanho ímpar, comumente 3, onde a soma de todos
+os elementos é 0.
+
+\begin{figure}[!htp]
+\centering
+\includegraphics[width=0.5\columnwidth]{SobelGx}
+\caption{Operador Sobel horizontal para imagens bidimensionais}
+\label{fig:SobelGx}
+\end{figure}
+
+Além disso, se considerarmos o \emph{kernel} utilizado para computador o gradiente horizontal (Figure \ref{fig:SobelGx}), ou seja, na coordenada $x$, todos os elementos da coluna central será 0. Todos os \emph{kernels} não são nada além de uma rotação ao redor do pixel central de algum outro.
+
+\subsection{Processamento morfológico}
+
+\subsubsection{Binarização}
+
+\subsubsection{Limiarização}
+
+\subsection{Extração de características}
+
+\subsection{Clusterização}
+
+\section{Resultados}
+
+\section{Conclusões}
 
 \paragraph{Sobel}
 O detector de bordas de Sobel se basea em algumas alterações e adaptações do operador matemático Laplaciano para um espaço dimensional discreto e bidimensional. O efeito desse operador no espectro matemático é o mesmo quando aplicado numa imagem, ou seja, ele ameniza variações de baixa frequência e atenua variações de alta frequência.\cite{sobel}
