@@ -99,8 +99,8 @@ de vagas na área da visão computacional sem a utilização de inteligência ar
 menores. Com isso, é bastante notório que o processo de contagem de vagas em um
 estacionamento tem uma grande abrangência no campo de estudos, não apenas da
 visão computacional. Técnicas como análise de texturas, detecção de gradiente,
-processamento morfológico (binarização e limiarização), extração de características
-e clusterização estão bem presentes neste trabalho.
+processamento morfológico (limiarização, binarização, dilatação e erosão), extração
+de características e clusterização estão bem presentes neste trabalho.
 
 	As tarefas realizadas envolvem desde abrir uma imagem simples do tipo \verb'BGR'
 até as mais diversas técnicas para o desenvolvimento de uma solução da problemática.
@@ -150,6 +150,54 @@ duas retas. O procedimento desta metodologia foi o seguinte:
 \end{figure}
 
 
+\subsection{Imagem}
+
+Os padrões de orientação e de pixelagem são tratados diferentemente pelo OpenCV.
+
+
+\subsubsection{Padrão RGB}
+
+	Tanto imagens como vídeos são armazenados da mesma forma. A classe
+\verb'cv::Mat' pode armazenar a matriz de pixels de uma imagem, bem como os
+frames de um vídeo.
+
+	Cada pixel tem seus canais armazenados, por padrão, na ordem Vermelho ({\em Red}),
+Verde ({\em Green}) e Azul ({\em Blue}) (\verb'RGB'). No entanto, a biblioteca em questão
+utiliza um padrão diferente, definido como \verb'BGR', invertendo a posição do valor do
+pixel azul com o vermelho.
+
+	É interessante converter a imagem do tipo \verb'BGR' para \verb'gray scale' porque
+o algorítmo necessita. Trabalhando com níveis de cinza só existe uma única informação
+a ser extraída: a intensidade do pixel, de 0 a 255. Todavia, ao trabalhar com imagem
+colorida, as informações triplicam. Três canais não relacionados aumentam o nível de
+complexidade por não terem uma ordenação linear que seja fácil de colocar em uma matriz.
+
+
+\subsubsection{Coordenadas}
+
+	O padrão de referências cartesianas computacionais é com origem no extremo noroeste
+da tela. Com eixo x crescendo para a direita e eixo y crescendo para baixo. No entanto,
+o padrão adotado pela biblioteca é situada com origem no extremo norte-oeste da tela,
+porém com eixo x crescendo para baixo e eixo y crescendo para a direita.
+
+
+\subsubsection{Acesso dos dados}
+
+	Para realizar o acesso dos dados matriciais da classe \verb'cv::Mat', utiliza-se,
+recomendavelmente, pela documentação\cite{devdocs}, o método
+\verb'cv::Mat::at<type T> (cv::Point(j, i))'. Contudo, esse acesso garante o percorrimento
+para cada índice de acesso em toda a matriz. Com isso, o desempenho é comprometido.
+Para a retificação desse problema, pode-se utilizar o recurso de ponteiros. A biblioteca
+disponibiliza um tipo de dados unsigned char chamado \verb'uchar * cv::Mat::data'
+em que aponta para o primeiro canal do primeiro pixel de uma matriz \verb'cv::Mat'.
+	No entanto, isso é para o caso de imagem colorida, como estamos trabalhando
+com níveis de cinza, não há preocupação com isso.
+
+	Desse modo, como a imagem, neste ponto, está em níveis de cinza, o retorno
+desse método \verb'at<unsigned char>(j, i)', em cada pixel (i, j), será um valor de
+0 a 255 indicando a intensidade de pixel para cada pixel analisado. Então é só comparar
+com os pixels da vizinhança.
+
 
 
 \section{Trabalhos relevantes}
@@ -194,6 +242,8 @@ usando um \emph{kernel} direcional e realizando a média dos resultados. Ele é,
 geralmente, quadrado com tamanho ímpar, comumente 3, onde a soma de todos
 os elementos é 0.
 
+
+%%%	IMAGEM 2	%%%
 \begin{figure}[!htp]
 \centering
 \includegraphics[width=0.5\columnwidth]{SobelGx}
@@ -201,13 +251,26 @@ os elementos é 0.
 \label{fig:SobelGx}
 \end{figure}
 
-Além disso, se considerarmos o \emph{kernel} utilizado para computador o gradiente horizontal (Figure \ref{fig:SobelGx}), ou seja, na coordenada $x$, todos os elementos da coluna central será 0. Todos os \emph{kernels} não são nada além de uma rotação ao redor do pixel central de algum outro.
+Além disso, se considerarmos o \emph{kernel} utilizado para computador o gradiente
+horizontal (Figure \ref{fig:SobelGx}), ou seja, na coordenada $x$, todos os elementos
+da coluna central será 0. Todos os \emph{kernels} não são nada além de uma rotação
+ao redor do pixel central de algum outro.
 
 \subsection{Processamento morfológico}
 
+\subsubsection{Limiarização}
+
 \subsubsection{Binarização}
 
-\subsubsection{Limiarização}
+	A binarização realizada após as detecções serem finalizadas foi trivial, mas merece
+ser rapidamente explicada pois o valor final não foi 0 ou 1. Para que fosse possível se
+visualizar a binarização, ela foi escalada de forma que 1 seja 255 mas que não possua
+nenhum outro número entre 255 e 0. Ou seja, todo pixel maior que um \emph{threshold}
+determinado seria setado como 255, e 0 caso contrário.
+
+\subsubsection{Dilatação}
+
+\subsubsection{Erosão}
 
 \subsection{Extração de características}
 
@@ -217,39 +280,9 @@ Além disso, se considerarmos o \emph{kernel} utilizado para computador o gradie
 
 \section{Conclusões}
 
-\paragraph{Sobel}
-O detector de bordas de Sobel se basea em algumas alterações e adaptações do operador matemático Laplaciano para um espaço dimensional discreto e bidimensional. O efeito desse operador no espectro matemático é o mesmo quando aplicado numa imagem, ou seja, ele ameniza variações de baixa frequência e atenua variações de alta frequência.\cite{sobel}
 
-Ele realiza esse procedimento realizando uma convolução nos eixos da imagem usando um \emph{kernel} direcional e realizando a média dos resultados. Ele é geralmente quadrado com tamanho ímpar, comumente 3, onde a soma de todos os elementos é 0.
 
-\begin{figure}[!htp]
-\centering
-\includegraphics[width=0.5\columnwidth]{SobelGx}
-\caption{Operador Sobel horizontal para imagens bidimensionais}
-\label{fig:SobelGx}
-\end{figure}
 
-Além disso, se considerarmos o \emph{kernel} utilizado para computador o gradiente horizontal (Figure \ref{fig:SobelGx}), ou seja, na coordenada $x$, todos os elementos da coluna central será 0. Todos os \emph{kernels} não são nada além de uma rotação ao redor do pixel central de algum outro.
-
-\paragraph{Canny}
-Diferentemente do algoritmo de Sobel, o algoritmo de Canny em si consiste de muito mais etapas para se obter o resultado final. A vantagem dele com relação aos outros é que as bordas detectadas sempre possuirão somente um pixel de largura.
-
-A primeira etapa é igual ao de detectores por gradiente, borrar e convoluir. No caso de Canny, a convolução é idêntica ao de Sobel. Logo após é aplicada uma limiarização na imagem e remoção de pixels não máximos, ou seja, se um pixel vizinho for maior que ele na direção da borda, sete o pixel para 0. Por último é aplicado duas binarizações com valores de \emph{threshold} diferentes. O que possuir o \emph{threshold} menor terá uma maior quantidade de falsos positivos para bordas, já a outra terá uma quantidade maior de falso negativos.
-
-A imagem final consiste da imagem binarizada com o \emph{threshold} maior unida com os elementos da imagem com o \emph{threshold} menor que se conectam com alguma borda da outra.\cite{canny}
-
-\paragraph{Laplace}
-O detector de bordas de Laplace se utiliza da operação matemática de Gradiente muito utilizada em cálculo, o Laplaciano. Esse detector de bordas, diferentemente do de Sobel, detecta de todas as direções simultaneamente (Figure \ref{fig:LaplaceKernel}, além de que o resultado final ser calculado de forma diferente também. No caso do detector de bordas Laplaciano, uma borda é quando o pixel resultante da convolução é um cruzamento por zero, ou seja, se os pixels ao redor possuem sinais opostos.\cite{laplace}
-
-\begin{figure}[!htp]
-\centering
-\includegraphics[width=\columnwidth]{LaplaceKernel}
-\caption{Operador Laplaciano}
-\label{fig:LaplaceKernel}
-\end{figure}
-
-\subsection{Binarização}
-A binarização realizada após as detecções serem finalizadas foi trivial, mas merece ser rapidamente explicada pois o valor final não foi 0 ou 1. Para que fosse possível se visualizar a binarização, ela foi escalada de forma que 1 seja 255 mas que não possua nenhum outro número entre 255 e 0. Ou seja, todo pixel maior que um \emph{threshold} determinado seria setado como 255, e 0 caso contrário.
 
 \subsection{Cálculo de precisão}
 Uma forma simples de se calcular o quão preciso um detector de borda é, quando comparado a um \emph{ground truth}, computar quantos pixels obtidos são iguais e dividir pela quantidade total de pixels existente. Portanto, uma imagem idêntica ao \emph{ground truth} resultaria em precisão 1. Já uma imagem oposta teria precisão 0. A equação \ref{eq:score} é que foi utilizada para se obter a precisão de cada detector, por imagem.
