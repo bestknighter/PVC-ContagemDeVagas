@@ -29,13 +29,12 @@ Mat ExtractFeatureMat(Mat featuresMat, int featureNum);
 #define DIST_RES 1
 #define ANGLE_RES M_PI/180.
 #define HOUGH_THRES 300 // Acumulador
-#define HOUGHP_THRES 150 // Acumulador
-#define MIN_LINE_LEN 0
+#define HOUGHP_THRES 75 // Acumulador
+#define MIN_LINE_LEN 5
 #define MAX_LINE_GAP 25
 #define TAM_DILATA 7 // Pixels
 #define TAM_ERODE 5 // Pixels
 #define TAM_LINE 3000 // Pixels
-#define ANGLE_THRES 0.25*M_PI/180.
 
 // Termina Hough
 
@@ -394,7 +393,7 @@ int main(int argc, char** argv){
 				Vec2f lineI = ConvertSegLineToLine(segLines[i]);
 				unsigned int j;
 				for(j = 0; j < linesDirections.size(); j++) {
-					if(linesSimilarity(linesDirections[j], lineI, 1000000) > 0.95) {
+					if(linesSimilarity(linesDirections[j], lineI, 1000) > 0.95) {
 						break;
 					}
 				}
@@ -404,13 +403,13 @@ int main(int argc, char** argv){
 			}
 
 			// Compute e desenha a clusterização adaptativa
-			std::vector<Vec4i> clusters = AKM(segLines, SEGLINE_THRES);
+			std::vector<Vec4i> clusters = AKM(segLines, SEGLINE_THRES, 100);
 		
 			Mat houghWithClusteredLines = Mat::zeros(gray.rows, gray.cols, gray.type());
 			// Mat houghWithClusteredLines = operado.clone();
 			cvtColor(houghWithClusteredLines, houghWithClusteredLines, COLOR_GRAY2BGR);
 			for( unsigned int i = 0; i < clusters.size(); i++ ) {
-				line( houghWithClusteredLines, Point(clusters[i][0], clusters[i][1]), Point(clusters[i][2], clusters[i][3]), Scalar(0,0,255), 2, 8 );
+				line( houghWithClusteredLines, Point(clusters[i][0], clusters[i][1]), Point(clusters[i][2], clusters[i][3]), Scalar(0,0,255), 1, 8 );
 			}
 		
 			// imshow("Hough - Segmento de Linhas Clusterizado", houghWithClusteredLines);
