@@ -126,6 +126,12 @@ OpenCV{\footnotesize \cite{opencv}}. Com isso, tornar afim delas.
 %%%%%%%%	INTRODUÇÃO
 \section{Introdução}
 
+	Encontrar um espaço livre em estacionamentos de grandes áreas metropolitanas
+pode tornar-se cansativo. Além de estressante, essa tarefa desafiadora geralmente
+consome tempo e dinheiro consideráveis. Além disso, contribui para poluir o meio
+ambiente com emissões de CO2. Tentando resolver esse problema, este projeto busca
+uma solução baseada em processamento de imagem.
+
 	Para se obter esse resultado da contagem, foi realizado um procedimento complexo
 desde detecção de gradiente até criação de algorítmos para determinar a similaridade de
 duas retas. O procedimento desta metodologia foi o seguinte:
@@ -203,14 +209,24 @@ com os pixels da vizinhança.
 %%%%%%%%	TRABALHOS RELEVANTES
 \section{Trabalhos relevantes}
 
+	O artigo ``{\em Car Parking Occupancy Detection Using Smart Camera Networks
+and Deep Learning}" é um trabalho de contagem de vagas em estacionamento utilizando,
+além do processamento de imagem, redes de aprendizagem profunda na área de
+inteligência articifial. Este artigo apresenta uma abordagem para a detecção de ocupação
+de estacionamento em tempo real que usa um classificador da Rede Neural Convolucional
+(CNN) que funciona a bordo de uma câmera inteligente com recursos limitados.
+
 
 
 
 %%%%%%%%	METODOLOGIA PROPOSTA
 \section{Metodologia proposta}
-análise de texturas, detecção de gradiente,
-processamento morfológico (binarização e limiarização), extração de características
-e clusterização
+
+	Para realizar a contagem de vagas de estacionamento, utilizou-se de um procedimento
+um tanto empírico para atingir os resultados. Ao receber a imagem, utilizou-se de análise
+de texturas para extrair as matrizes de co-ocorrência, detecção de gradiente como um
+pré-processamento para reduzir informações inúteis, processamento morfológico
+(binarização e limiarização), extração de características e clusterização.
 
 \subsection{Análise de texturas}
 
@@ -272,7 +288,7 @@ determinado seria setado como 255, e 0 caso contrário.
 
 \subsubsection{Dilatação e Erosão{\footnotesize \cite{filtros-morfologicos}}}
 
-	Filtros morfológicos sxploram as propriedades geométricas dos sinais (níveis de cinza
+	Filtros morfológicos exploram as propriedades geométricas dos sinais (níveis de cinza
 da imagem). Para filtros morfológicos, as máscaras são denominadas elementos
 estruturantes e apresentam valores 0 ou 1 na matriz que correspondem ao pixel considerado.
 Os filtros morfológicos básicos são o filtro da mediana, erosão e dilatação. No entanto,
@@ -290,7 +306,7 @@ cinza), gerando imagens mais escuras.
 
 \subsubsection{Hough}
 
-	A transformação de Hough{\footnotesize \cite{hough} é uma técnica que pode
+	A transformação de Hough{\footnotesize \cite{hough}} é uma técnica que pode
 ser usada para isolar características de uma determinada forma dentro de uma imagem.
 Pelo fato de necessitar que as características desejadas sejam especificadas em alguma
 forma paramétrica, a transformação Hough clássica é mais comumente usada para a
