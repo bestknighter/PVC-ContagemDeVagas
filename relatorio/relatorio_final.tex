@@ -63,7 +63,7 @@
 
 
 %%%%%%%%	TITLE
-\title{Contagem de vagas em estacionamentos}
+\title{Contagem de Vagas em Estacionamentos}
 
 \date{03 de Julho de 2017}
 
@@ -98,7 +98,7 @@ de vagas na área da visão computacional sem a utilização de inteligência ar
 menores. Com isso, é bastante notório que o processo de contagem de vagas em um
 estacionamento tem uma grande abrangência no campo de estudos, não apenas da
 visão computacional. Técnicas como análise de texturas, detecção de gradiente,
-processamento morfológico (limiarização e binarização, dilatação e erosão), extração
+processamentos morfológicos, extração
 de características e clusterização estão bem presentes neste trabalho.
 
 	As tarefas realizadas envolvem desde abrir uma imagem simples do tipo \verb'BGR'
@@ -150,7 +150,7 @@ duas retas. O procedimento desta metodologia foi o seguinte:
 \begin{figure}[!htb]
 \centering
 \includegraphics[scale=0.6]{introducao.png}
-\caption{Diagrama em árvore da ordem e disposição das etapas realizadas.}
+\caption{Diagrama em árvore da ordem e disposição das etapas realizadas}
 \label{Rotulo}
 \end{figure}
 
@@ -165,7 +165,7 @@ duas retas. O procedimento desta metodologia foi o seguinte:
 \begin{figure}[!htb]
 \centering
 \includegraphics[scale=0.15]{estacionamento.jpg}
-\caption{Diagrama em árvore da ordem e disposição das etapas realizadas.}
+\caption{Imagem original de exemplo}
 \label{Rotulo}
 \end{figure}
 
@@ -319,7 +319,7 @@ ao redor do pixel central de algum outro.
 \begin{figure}[!htb]
 \centering
 \includegraphics[scale=0.15]{sobel-mag.jpg}
-\caption{Diagrama em árvore da ordem e disposição das etapas realizadas.}
+\caption{Matriz magnitude obtida ao realizar a detecção de Sobel}
 \label{Rotulo}
 \end{figure}
 
@@ -354,7 +354,7 @@ cinza), gerando imagens mais escuras.
 \begin{figure}[!htb]
 \centering
 \includegraphics[scale=0.15]{morph-operado.jpg}
-\caption{Diagrama em árvore da ordem e disposição das etapas realizadas.}
+\caption{Imagem após realizada todos os processamentos morfológicos}
 \label{Rotulo}
 \end{figure}
 
@@ -378,7 +378,7 @@ a transformada clássica de Hough contém muitas aplicações.
 \begin{figure}[!htb]
 \centering
 \includegraphics[scale=0.15]{hough-linhas.jpg}
-\caption{Diagrama em árvore da ordem e disposição das etapas realizadas.}
+\caption{Retas encontradas pela Transformada de Hough}
 \label{Rotulo}
 \end{figure}
 
@@ -401,7 +401,7 @@ da linha. Apenas temos que definir o limiar.
 \begin{figure}[!htb]
 \centering
 \includegraphics[scale=0.15]{hough-segmentolinhas.jpg}
-\caption{Diagrama em árvore da ordem e disposição das etapas realizadas.}
+\caption{Segmento de Retas encontradas pela Transformada Probabilística de Hough}
 \label{Rotulo}
 \end{figure}
 
@@ -429,7 +429,7 @@ para os clusters.
 \begin{figure}[!htb]
 \centering
 \includegraphics[scale=0.15]{hough-linhas-cluster.jpg}
- \caption{Retas geradas por Hough clusterizadas}
+ \caption{Retas geradas por Hough depois da clusterização e filtragem}
 \label{fig:retacluster}
 \end{figure}
 
@@ -442,7 +442,7 @@ algo já possível de se enxergar.
 \begin{figure}[!htb]
 \centering
 \includegraphics[scale=0.15]{hough-segmentolinhas-cluster.jpg}
- \caption{Segmentos de retas geradas por Hough probabilístico clusterizadas}
+ \caption{Segmentos de retas geradas por Hough probabilístico depois da clusterização e filtragem}
 \label{fig:segcluster}
 \end{figure}
 
