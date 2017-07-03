@@ -312,7 +312,7 @@ int main(int argc, char** argv){
 
 	printf("GLCMs computadas. Calculando Transformada de Hough...\n");
 
-	// Começa Hough (Transformada de Hough (rho theta), mesmo alpha)
+	// Começa Hough
 
 	{
 		// Binariza
@@ -334,6 +334,7 @@ int main(int argc, char** argv){
 			std::vector<Vec2f> lines;
 			HoughLines(operado, lines, DIST_RES, ANGLE_RES, HOUGH_THRES);
 			
+			// Desenha as linhas
 			Mat houghWithLines = gray.clone();
 			cvtColor(operado, houghWithLines, COLOR_GRAY2BGR);
 			for( unsigned int i = 0; i < lines.size(); i++ ) {
@@ -351,12 +352,13 @@ int main(int argc, char** argv){
 			// imshow("Hough - Linhas", houghWithLines);
 			imwrite("./debug-data/hough-linhas.jpg", houghWithLines);
 
-			// Compute e desenha a clusterização adaptativa
+			// Compute a clusterização adaptativa
 			std::vector<Vec2f> clusters = AKM(lines, LINE_THRES);
-			FilterByAKM(clusters, 0.9, 100000, 2);
+			FilterByAKM(clusters, 0.9, 100000, 2); // Remove medias com menos de 2 ocorrencias
 
 			linesDirections = clusters;
 
+			// Desenha as linhas clusterizadas
 			Mat houghWithClusteredLines = gray.clone();
 			cvtColor(operado, houghWithClusteredLines, COLOR_GRAY2BGR);
 			for( unsigned int i = 0; i < clusters.size(); i++ ) {
@@ -379,6 +381,7 @@ int main(int argc, char** argv){
 			std::vector<Vec4i> segLines;
 			HoughLinesP(operado, segLines, DIST_RES, ANGLE_RES, HOUGHP_THRES, MIN_LINE_LEN, MAX_LINE_GAP);
 		
+			// Desenha as linhas
 			Mat houghWithLines = Mat::zeros(gray.rows, gray.cols, gray.type());
 			// Mat houghWithLines = operado.clone();
 			cvtColor(houghWithLines, houghWithLines, COLOR_GRAY2BGR);
@@ -389,6 +392,7 @@ int main(int argc, char** argv){
 			// imshow("Hough - Segmento de Linhas", houghWithLines);
 			imwrite("./debug-data/hough-segmentolinhas.jpg", houghWithLines);
 
+			// Remove as linhas que nao tem similaridades as medias obtidas anteriormente
 			for(unsigned int i = 0; i < segLines.size(); i++) {
 				Vec2f lineI = ConvertSegLineToLine(segLines[i]);
 				unsigned int j;
@@ -424,7 +428,7 @@ int main(int argc, char** argv){
 	return 0;
 }
 
-// Começa GLCM (matriz de homogeneidades)
+// Começa GLCM
 
 Mat ExtractFeatureMat(Mat featuresMat, int featureNum) {
 	int sizeY = featuresMat.size[0];
@@ -453,20 +457,20 @@ std::vector<Vec2f> AKM( std::vector<Vec2f> input, float threshold, float lineMax
 	for(unsigned int i = 1; i < input.size(); ++i) {
 		unsigned int closestK = 0;
 		double biggestSimilarity = 0.;
-		for(unsigned int k = 0; k < means.size(); ++k) {
+		for(unsigned int k = 0; k < means.size(); ++k) { // Acha media mais proxima
 			double similarity = linesSimilarity(input[i], means[k], lineMaxDist);
 			if(similarity > biggestSimilarity) {
 				biggestSimilarity = similarity;
 				closestK = k;
 			}
 		}
-		if(biggestSimilarity > threshold) {
+		if(biggestSimilarity > threshold) { // Se estiver perto o suficiente, adiciona nessa media e recomputa
 			Vec2f oldMean = means[closestK] * ((float)amount[closestK]++);
 			means[closestK] = (oldMean + input[i])/((float)amount[closestK]);
-			for(unsigned int a = 0; a < means.size(); ++a) {
+			for(unsigned int a = 0; a < means.size(); ++a) { // Medias podem ter ficado perto demais umas das outras, eh preciso verificar e unir caso seja verdade
 				for(unsigned int b = a+1; b < means.size(); ++b) {
 					double similarity = linesSimilarity(means[a], means[b], lineMaxDist);
-					if(similarity > threshold) {
+					if(similarity > threshold) { // Unificando medias muito proximas
 						float newAmount = amount[b]+amount[a];
 						Vec2f newMean = ( means[b]*((float)amount[b]) + means[a]*((float)amount[a]) )/newAmount;
 						means[a] = newMean;
@@ -476,12 +480,12 @@ std::vector<Vec2f> AKM( std::vector<Vec2f> input, float threshold, float lineMax
 					}
 				}
 			}
-		} else {
+		} else { // Nao tem media perto o suficiente, cria uma nova e a inicializa na posicao desse novo item
 			means.push_back(input[i]);
 			amount.push_back(1);
 		}
 	}
-	for(unsigned int a = 0; a < means.size(); ++a) {
+	for(unsigned int a = 0; a < means.size(); ++a) { // Remove medias que tiverem menos que minLines elementos associados
 		if(amount[a] < minLines) {
 			means.erase(means.begin()+a);
 			amount.erase(amount.begin()+ a--);
@@ -501,20 +505,20 @@ std::vector<Vec4i> AKM( std::vector<Vec4i> input, float threshold, float lineMax
 	for(unsigned int i = 1; i < input.size(); ++i) {
 		unsigned int closestK = 0;
 		double biggestSimilarity = 0.;
-		for(unsigned int k = 0; k < means.size(); ++k) {
+		for(unsigned int k = 0; k < means.size(); ++k) { // Acha media mais proxima
 			double similarity = linesSimilarity(input[i], means[k], lineMaxDist);
 			if(similarity > biggestSimilarity) {
 				biggestSimilarity = similarity;
 				closestK = k;
 			}
 		}
-		if(biggestSimilarity > threshold) {
+		if(biggestSimilarity > threshold) { // Se estiver perto o suficiente, adiciona nessa media e recomputa
 			Vec4i oldMean = means[closestK] * ((float)amount[closestK]++);
 			means[closestK] = (oldMean + input[i])/((float)amount[closestK]);
-			for(unsigned int a = 0; a < means.size(); ++a) {
+			for(unsigned int a = 0; a < means.size(); ++a) { // Medias podem ter ficado perto demais umas das outras, eh preciso verificar e unir caso seja verdade
 				for(unsigned int b = a+1; b < means.size(); ++b) {
 					double similarity = linesSimilarity(means[b], means[a], lineMaxDist);
-					if(similarity > threshold) {
+					if(similarity > threshold) { // Unificando medias muito proximas
 						float newAmount = amount[b]+amount[a];
 						Vec4i newMean = ( means[b]*((float)amount[b]) + means[a]*((float)amount[a]) )/newAmount;
 						means[a] = newMean;
@@ -524,12 +528,12 @@ std::vector<Vec4i> AKM( std::vector<Vec4i> input, float threshold, float lineMax
 					}
 				}
 			}
-		} else {
+		} else { // Nao tem media perto o suficiente, cria uma nova e a inicializa na posicao desse novo item
 			means.push_back(input[i]);
 			amount.push_back(1);
 		}
 	}
-	for(unsigned int a = 0; a < means.size(); ++a) {
+	for(unsigned int a = 0; a < means.size(); ++a) { // Remove medias que tiverem menos que minLines elementos associados
 		if(amount[a] < minLines) {
 			means.erase(means.begin()+a);
 			amount.erase(amount.begin()+ a--);
@@ -538,6 +542,7 @@ std::vector<Vec4i> AKM( std::vector<Vec4i> input, float threshold, float lineMax
 	return means;
 }
 
+// Remove todas as linhas cujo suas medias nao possuem mais de 2 "irmaos"
 void FilterByAKM( std::vector<Vec2f>& input, float threshold, float lineMaxDist, unsigned int minLines ) {
 	std::vector<Vec2f> clusters = AKM(input, threshold, lineMaxDist, minLines);
 	for(unsigned int i = 1; i < input.size(); ++i) {
@@ -573,6 +578,7 @@ double linesSimilarity( Vec4i segLineA, Vec4i segLineB, float maxDistance ) {
 	return linesSimilarity(lineA, lineB, maxDistance) * (distSim > 0 ? distSim : 0);
 }
 
+// Obtem uma reta equivalente ao segmento de reta
 Vec2f ConvertSegLineToLine(Vec4i segLine) {
 	Point mid((segLine[0]+segLine[2])/2, (segLine[1]+segLine[3])/2);
 
