@@ -157,7 +157,17 @@ duas retas. O procedimento desta metodologia foi o seguinte:
 
 \subsection{Imagem}
 
-Os padrões de orientação e de pixelagem são tratados diferentemente pelo OpenCV.
+	Os padrões de orientação e de pixelagem são tratados diferentemente pelo OpenCV.
+
+	A imagem utilizada ao longo do projeto foi a seguinte:
+
+%%%	IMAGEM 2	%%%
+\begin{figure}[!htb]
+\centering
+\includegraphics[scale=0.15]{estacionamento.jpg}
+\caption{Diagrama em árvore da ordem e disposição das etapas realizadas.}
+\label{Rotulo}
+\end{figure}
 
 
 \subsubsection{Padrão RGB}
@@ -216,6 +226,10 @@ inteligência articifial. Este artigo apresenta uma abordagem para a detecção 
 de estacionamento em tempo real que usa um classificador da Rede Neural Convolucional
 (CNN) que funciona a bordo de uma câmera inteligente com recursos limitados.
 
+	Com isso, decidiu-se explorar a viabilidade de realizar o processo de contagem de
+vagas de um estacionamento sem a utilização de redes neurais. Portanto, este projeto
+usa apenas processamento de imagens para a obtenção dos resultados almejados.
+
 
 
 
@@ -246,11 +260,36 @@ capturados em uma imagem. Neste projeto terão quatro matrizes finais que serão
 pelas direções 0º, 45º, 90º e 135º, em ambos sentidos.
 
 
+%%%	IMAGENS 3 E 4	%%%
+\begin{figure}[!htb]
+\minipage{0.475\linewidth}
+  \includegraphics[width=\linewidth]{GLCM0-Homogeneidade.jpg}
+  \caption{GLCM 0º}\label{fig:glcm0}
+\endminipage\hfill
+\minipage{0.475\linewidth}
+  \includegraphics[width=\linewidth]{GLCM45-Homogeneidade.jpg}
+  \caption{GLCM 45º}\label{fig:glcm45}
+\endminipage
+\end{figure}
+
+%%%	IMAGENS 5 E 6	%%%
+\begin{figure}[!htb]
+\minipage{0.475\linewidth}
+  \includegraphics[width=\linewidth]{GLCM90-Homogeneidade.jpg}
+  \caption{GLCM 90º}\label{fig:glcm90}
+\endminipage\hfill
+\minipage{0.475\linewidth}
+  \includegraphics[width=\linewidth]{GLCM135-Homogeneidade.jpg}
+  \caption{GLCM 135º}\label{fig:glcm135}
+\endminipage
+\end{figure}
+
+
 \subsection{Detecção de gradiente}
 	
 	O pré-processamento da imagem foi realizado com o algorítmo de Sobel.
 \paragraph{Sobel}
-	O detector de bordas de Sobel{footnotesize \cite{sobel1}} se basea em algumas
+	O detector de bordas de Sobel{\footnotesize \cite{sobel2}} se basea em algumas
 alterações e adaptações do operador matemático Laplaciano{\footnotesize \cite{laplace1}}
 para um espaço dimensional discreto e bidimensional{\footnotesize \cite{laplace2}}. O
 efeito desse operador no espectro matemático é o mesmo quando aplicado numa imagem,
@@ -262,7 +301,7 @@ geralmente, quadrado com tamanho ímpar, comumente 3, onde a soma de todos
 os elementos é 0.
 
 
-%%%	IMAGEM 2	%%%
+%%%	IMAGEM 7	%%%
 \begin{figure}[!htp]
 \centering
 \includegraphics[width=0.5\columnwidth]{SobelGx}
@@ -274,6 +313,15 @@ Além disso, se considerarmos o \emph{kernel} utilizado para computador o gradie
 horizontal (Figure \ref{fig:SobelGx}), ou seja, na coordenada $x$, todos os elementos
 da coluna central será 0. Todos os \emph{kernels} não são nada além de uma rotação
 ao redor do pixel central de algum outro.
+
+
+%%%	IMAGEM 8	%%%
+\begin{figure}[!htb]
+\centering
+\includegraphics[scale=0.15]{sobel-mag.jpg}
+\caption{Diagrama em árvore da ordem e disposição das etapas realizadas.}
+\label{Rotulo}
+\end{figure}
 
 \subsection{Processamento morfológico}
 
@@ -302,6 +350,16 @@ cinza), gerando imagens mais escuras.
 \end{description}
 
 
+%%%	IMAGEM 9	%%%
+\begin{figure}[!htb]
+\centering
+\includegraphics[scale=0.15]{morph-operado.jpg}
+\caption{Diagrama em árvore da ordem e disposição das etapas realizadas.}
+\label{Rotulo}
+\end{figure}
+
+
+
 \subsection{Extração de características}
 
 \subsubsection{Hough}
@@ -315,6 +373,16 @@ generalizada pode ser empregada em aplicações onde uma descrição analítica 
 de uma ou mais características não é possível. Apesar das suas restrições de domínio,
 a transformada clássica de Hough contém muitas aplicações.
 
+
+%%%	IMAGEM 10	%%%
+\begin{figure}[!htb]
+\centering
+\includegraphics[scale=0.15]{hough-linhas.jpg}
+\caption{Diagrama em árvore da ordem e disposição das etapas realizadas.}
+\label{Rotulo}
+\end{figure}
+
+
 	A vantagem principal da transformada de Hough é que é uma técnica que não é afetada
 por espaços entre as características obtidas por detectores de borda e é relativamente invariante
 ao ruído nas imagens. A ideia de se utilizar esta transformada é para encontrar as linhas que dividem
@@ -323,10 +391,19 @@ cada vaga.
 \subsubsection{{\em Probabilistic} Hough {\em Transform}}
 
 	Na transformada de Hough, percebe-se que mesmo para uma linha com dois argumentos
-é preciso muito processamento. A Transformada probabilística de Hough{\footnotesize \cite{probabilistc-hough}}
+é preciso muito processamento. A Transformada probabilística de Hough{\footnotesize \cite{probabilistic-hough}}
 é uma otimização da transformada clássica de Hough. Não leva todos os pontos em consideração,
 em vez disso, toma apenas um subconjunto aleatório de pontos que é suficiente para a detecção
 da linha. Apenas temos que definir o limiar.
+
+
+%%%	IMAGEM 11	%%%
+\begin{figure}[!htb]
+\centering
+\includegraphics[scale=0.15]{hough-segmentolinhas.jpg}
+\caption{Diagrama em árvore da ordem e disposição das etapas realizadas.}
+\label{Rotulo}
+\end{figure}
 
 
 
@@ -347,9 +424,33 @@ dados são então atribuídos a um desses clusters. Mesmo que o método pareça 
 o fato de que pode não ser fácil identificar claramente os elementos K iniciais ou as sementes
 para os clusters.
 
+
+%%%	IMAGEM 12	%%%
+\begin{figure}[!htb]
+\centering
+\includegraphics[scale=0.15]{hough-linhas-cluster.jpg}
+ \caption{Retas geradas por Hough clusterizadas}
+\label{fig:retacluster}
+\end{figure}
+
+
 	K-means foi utilizado para que as linhas retas ou segmentos de retas semelhantes
 geradas pelas transformadas Hough sejam agrupadas. Com isso, a contagem tornou-se
 algo já possível de se enxergar.
+
+%%%	IMAGEM 12	%%%
+\begin{figure}[!htb]
+\centering
+\includegraphics[scale=0.15]{hough-segmentolinhas-cluster.jpg}
+ \caption{Segmentos de retas geradas por Hough probabilístico clusterizadas}
+\label{fig:segcluster}
+\end{figure}
+
+
+\subsubsection{Similaridade de retas}
+
+	Para a aplicação da clusterização pelo método de K-means, criou-se um algorítmo
+para definir a similaridade entre as retas encontradas pela Trasnformada Hough.
 
 
 
