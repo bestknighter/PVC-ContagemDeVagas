@@ -13,6 +13,7 @@
 \usepackage{mathtools}
 \usepackage[table,xcdraw]{xcolor}
 \usepackage{url}
+\usepackage{xfrac}
 
 \definecolor{commentcolor}{rgb}{0.64,0.61,0.55}
 \definecolor{numbercolor}{rgb}{0.5,0.37,0.12}
@@ -113,8 +114,9 @@ Para isso, a liguagem utilizada foi C++ com o padrão C++ 11 e a versão 3.2.0 d
 %%%%%%%%	BODY TEXT
 \section{Objetivos}
 
-	O objetivo principal o desenvolvimento desse projeto é chegar à uma solução sobre
-a precisão e o resultado do processo utilizado para a contagem das vagas. Além disso, a
+	O objetivo principal do desenvolvimento desse projeto é chegar à uma solução sobre
+um procedimento a ser seguido para se realizar um processo para a contagem das vagas
+sem utilizar técnicas de aprendizado de máquina. Além disso, a
 atividade como um todo objetiva a exploração dos conceitos aprendidos ao longo do curso
 de Princípios de Visão Computacional e ferramentas disponíveis na biblioteca em questão,
 OpenCV{\footnotesize \cite{opencv}}. Com isso, tornar afim delas.
@@ -134,39 +136,39 @@ uma solução baseada em processamento de imagem.
 
 	Para se obter esse resultado da contagem, foi realizado um procedimento complexo
 desde detecção de gradiente até criação de algorítmos para determinar a similaridade de
-duas retas. O procedimento desta metodologia foi o seguinte:
+duas retas. Dos algorítmos pré-existentes que foram utilizados, o procedimento foi o seguinte:
 
 
 \begin{description}
-\item [Etapa 1] Abre uma imagem de estacionamento;
-\item [Etapa 2] Calcula as matrizes GLCM's;
-\item [Etapa 3] Aplica o algorítmo de detecção {\em Sobel Detector}{\footnotesize \cite{sobel1}};
-\item [Etapa 4] A partir de Sobel, aplica {\em Hough Line Transform};
-\item [Etapa 5] A partir de Sobel, calcula a Transformada Probabilística de Hough.
+\item [Etapa 1] Abre-se uma imagem de estacionamento;
+\item [Etapa 2] Calcula-se diversas matrizes GLCM's;
+\item [Etapa 3] Aplica-se o algorítmo {\em Sobel Detector}{\footnotesize \cite{sobel1}};
+\item [Etapa 4] A partir de Sobel, aplica-se {\em Hough Line Transform};
+\item [Etapa 5] A partir de Sobel, calcula-se a Transformada Probabilística de Hough.
 \end{description}
-
 
 %%%	IMAGEM 1	%%%
 \begin{figure}[!htb]
 \centering
 \includegraphics[scale=0.6]{introducao.png}
 \caption{Diagrama em árvore da ordem e disposição das etapas realizadas}
-\label{Rotulo}
+\label{fig:intro}
 \end{figure}
 
+	Após essas etapas, foram-se realizados procedimentos personalizados que serão descritos mais adiante.
 
 \subsection{Imagem}
 
 	Os padrões de orientação e de pixelagem são tratados diferentemente pelo OpenCV.
 
-	A imagem utilizada ao longo do projeto foi a seguinte:
+	A imagem utilizada para testes ao longo do projeto está representada em Figure \ref{fig:original}.
 
 %%%	IMAGEM 2	%%%
 \begin{figure}[!htb]
 \centering
 \includegraphics[scale=0.15]{estacionamento.jpg}
 \caption{Imagem original de exemplo}
-\label{Rotulo}
+\label{fig:original}
 \end{figure}
 
 
@@ -181,37 +183,32 @@ Verde ({\em Green}) e Azul ({\em Blue}) (\verb'RGB'). No entanto, a biblioteca e
 utiliza um padrão diferente, definido como \verb'BGR', invertendo a posição do valor do
 pixel azul com o vermelho.
 
-	É interessante converter a imagem do tipo \verb'BGR' para \verb'gray scale' porque
-o algorítmo necessita. Trabalhando com níveis de cinza só existe uma única informação
+	É interessante converter a imagem do tipo \verb'BGR' para \emph{grayscale} porque
+diversos algorítmos usados não suportam imagens coloridas.
+Trabalhando com níveis de cinza só existe uma única informação
 a ser extraída: a intensidade do pixel, de 0 a 255. Todavia, ao trabalhar com imagem
 colorida, as informações triplicam. Três canais não relacionados aumentam o nível de
-complexidade por não terem uma ordenação linear que seja fácil de colocar em uma matriz.
+complexidade por não terem uma ordenação linear que seja fácil de colocar em uma matriz,
+e que causam um \emph{overhead} desnecessário sem nenhum ganho de precisão.
 
 
 \subsubsection{Coordenadas}
 
 	O padrão de referências cartesianas computacionais é com origem no extremo noroeste
 da tela. Com eixo x crescendo para a direita e eixo y crescendo para baixo. No entanto,
-o padrão adotado pela biblioteca é situada com origem no extremo norte-oeste da tela,
+o padrão adotado pela biblioteca é situada, também, com origem no extremo norte-oeste da tela,
 porém com eixo x crescendo para baixo e eixo y crescendo para a direita.
 
 
 \subsubsection{Acesso dos dados}
 
 	Para realizar o acesso dos dados matriciais da classe \verb'cv::Mat', utiliza-se,
-recomendavelmente, pela documentação\cite{devdocs}, o método
-\verb'cv::Mat::at<type T> (cv::Point(j, i))'. Contudo, esse acesso garante o percorrimento
-para cada índice de acesso em toda a matriz. Com isso, o desempenho é comprometido.
-Para a retificação desse problema, pode-se utilizar o recurso de ponteiros. A biblioteca
-disponibiliza um tipo de dados unsigned char chamado \verb'uchar * cv::Mat::data'
-em que aponta para o primeiro canal do primeiro pixel de uma matriz \verb'cv::Mat'.
-	No entanto, isso é para o caso de imagem colorida, como estamos trabalhando
-com níveis de cinza, não há preocupação com isso.
+recomendada pela documentação\cite{devdocs}, o método
+\verb'cv::Mat::at<type T> (cv::Point(j, i))'. 
 
 	Desse modo, como a imagem, neste ponto, está em níveis de cinza, o retorno
-desse método \verb'at<unsigned char>(j, i)', em cada pixel (i, j), será um valor de
-0 a 255 indicando a intensidade de pixel para cada pixel analisado. Então é só comparar
-com os pixels da vizinhança.
+do método \verb'at<unsigned char>(j, i)', em cada pixel (i, j), será um valor de
+0 a 255 indicando a intensidade de pixel para cada pixel analisado.
 
 
 
@@ -221,9 +218,9 @@ com os pixels da vizinhança.
 
 	O artigo ``{\em Car Parking Occupancy Detection Using Smart Camera Networks
 and Deep Learning}" é um trabalho de contagem de vagas em estacionamento utilizando,
-além do processamento de imagem, redes de aprendizagem profunda na área de
-inteligência articifial. Este artigo apresenta uma abordagem para a detecção de ocupação
-de estacionamento em tempo real que usa um classificador da Rede Neural Convolucional
+além do processamento de imagem, redes de aprendizagem profunda. Este artigo
+apresenta uma abordagem para a detecção de ocupação de estacionamento
+em tempo real que usa um classificador da Rede Neural Convolucional
 (CNN) que funciona a bordo de uma câmera inteligente com recursos limitados.
 
 	Com isso, decidiu-se explorar a viabilidade de realizar o processo de contagem de
@@ -239,8 +236,12 @@ usa apenas processamento de imagens para a obtenção dos resultados almejados.
 	Para realizar a contagem de vagas de estacionamento, utilizou-se de um procedimento
 um tanto empírico para atingir os resultados. Ao receber a imagem, utilizou-se de análise
 de texturas para extrair as matrizes de co-ocorrência, detecção de gradiente como um
-pré-processamento para reduzir informações inúteis, processamento morfológico
-(binarização e limiarização), extração de características e clusterização.
+pré-processamento para reduzir informações inúteis, processamentos morfológicos,
+extrações de características, clusterizações e filtragens.
+
+	Nas duas últimas etapas da metodologia proposta, foram realizados alguns procedimentos
+já existentes, além de algortítmos próprios. Eles foram responsáveis por realizar a última etapa
+antes da segmentação para a contagem das vagas.
 
 \subsection{Análise de texturas}
 
@@ -257,18 +258,28 @@ aproxima a distribuição de probabilidade conjunta de um par de pixels.
 sub-relação de imagem de uma região específica e de tamanho específico. Ou seja, com
 essa matriz de coocorrência é possível detectar, de certa forma, a textura de objetos
 capturados em uma imagem. Neste projeto terão quatro matrizes finais que serão obtidas
-pelas direções 0º, 45º, 90º e 135º, em ambos sentidos.
+pelas direções 0º, 45º, 90º e 135º, em ambos sentidos, com offsets de 3 pixels.
+
+	As GLCM's não foram computadas na imagem toda, entretanto, em blocos de 32x32
+pixels, deslocados de 8 pixels em ambos os eixos para cada iteração. O que significa que,
+por exemplo, cada uma das GLCM's seriam de 32x32 e começariam no pixel $(0,0)$, depois
+$(0,8)$, $(0,16)$ e assim por diante.
+
+	A homogeneidade de cada uma dessas matrizes foi obtida
+e salva numa matriz que representa onde da imagem original aquele valor foi computado
+de tal forma que, para se obter a homogeneidade calculada para um bloco como $(8,8, 40,40)$, basta
+checar essa matriz final na posição $(1,1)$.
 
 
 %%%	IMAGENS 3 E 4	%%%
 \begin{figure}[!htb]
 \minipage{0.475\linewidth}
   \includegraphics[width=\linewidth]{GLCM0-Homogeneidade.jpg}
-  \caption{GLCM 0º}\label{fig:glcm0}
+  \caption{GLCM $3\angle 0º$}\label{fig:glcm0}
 \endminipage\hfill
 \minipage{0.475\linewidth}
   \includegraphics[width=\linewidth]{GLCM45-Homogeneidade.jpg}
-  \caption{GLCM 45º}\label{fig:glcm45}
+  \caption{GLCM $3\angle 45º$}\label{fig:glcm45}
 \endminipage
 \end{figure}
 
@@ -276,11 +287,11 @@ pelas direções 0º, 45º, 90º e 135º, em ambos sentidos.
 \begin{figure}[!htb]
 \minipage{0.475\linewidth}
   \includegraphics[width=\linewidth]{GLCM90-Homogeneidade.jpg}
-  \caption{GLCM 90º}\label{fig:glcm90}
+  \caption{GLCM $3\angle 90º$}\label{fig:glcm90}
 \endminipage\hfill
 \minipage{0.475\linewidth}
   \includegraphics[width=\linewidth]{GLCM135-Homogeneidade.jpg}
-  \caption{GLCM 135º}\label{fig:glcm135}
+  \caption{GLCM $3\angle 135º$}\label{fig:glcm135}
 \endminipage
 \end{figure}
 
@@ -316,12 +327,16 @@ ao redor do pixel central de algum outro.
 
 
 %%%	IMAGEM 8	%%%
-\begin{figure}[!htb]
+\begin{figure}[!hbp]
 \centering
 \includegraphics[scale=0.15]{sobel-mag.jpg}
 \caption{Matriz magnitude obtida ao realizar a detecção de Sobel}
-\label{Rotulo}
+\label{fig:sobel}
 \end{figure}
+
+	Com Sobel, obtemos o gradiente em $x$, o gradiente em $y$, o ângulo da borda e a
+intensidade da transição mas, deste ponto em diante, somente a magnitude (Figure \ref{fig:sobel}) será considerada
+no processamento.
 
 \subsection{Processamento morfológico}
 
@@ -358,7 +373,21 @@ cinza), gerando imagens mais escuras.
 \label{Rotulo}
 \end{figure}
 
+	Foi-se realizado primeiro uma abertura mas com \emph{kernels} diferentes para cada
+etapa, por isso preferiu-se descrevê-los como suas etapas separadas. Essas operações foram
+feitas pois o detector de borda computava duas linhas (uma borda para cada lado) nas laterais
+das faixas divisórias das vagas e era desejado uní-las em uma única linha.
 
+	Na etapa da dilatação, usou-se um \emph{kernel} circular de diâmetro 7 pixels. Isso ajudou
+a conectar várias linhas que talvez tivessem sido desconectadas com o processo da limiarização.
+
+	A etapa de erosão utilizou um \emph{kernel} também circular mas de diâmetro 5 pixels.
+	
+	A decisão de se fazer assim foi de que, apesar vários pontos continuarem visíveis, as linhas
+permaneceriam conectadas e com um tamanho relativamente próximo ao da imagem original. Uma
+das vantagens advindas desse processo é que facilita e aumenta a quantidade de linhas geradas
+na próxima etapa e, com isso, aumentando a discrepância na quantidade de linhas geradas para
+cada direção e local da imagem.
 
 \subsection{Extração de características}
 
@@ -373,20 +402,26 @@ generalizada pode ser empregada em aplicações onde uma descrição analítica 
 de uma ou mais características não é possível. Apesar das suas restrições de domínio,
 a transformada clássica de Hough contém muitas aplicações.
 
-
 %%%	IMAGEM 10	%%%
 \begin{figure}[!htb]
 \centering
 \includegraphics[scale=0.15]{hough-linhas.jpg}
 \caption{Retas encontradas pela Transformada de Hough}
-\label{Rotulo}
+\label{fig:hough}
 \end{figure}
-
 
 	A vantagem principal da transformada de Hough é que é uma técnica que não é afetada
 por espaços entre as características obtidas por detectores de borda e é relativamente invariante
 ao ruído nas imagens. A ideia de se utilizar esta transformada é para encontrar as linhas que dividem
 cada vaga.
+
+	Claro que, como as linhas são bem grossas, o algoritmo iria encontrar centenas
+de retas para cada linha divisória de vagas, e esse era o objetivo. Usando um limiar de
+300 para o acumulador de Hough, foi possível obter todas as retas mostrada na Figure
+\ref{fig:hough}. Uma rápida inspeção já nos permite perceber que as linhas detectadas,
+em sua grande maioria, apontam para os pontos de fuga da projeção da câmera.
+Isso significa que a distância entre as retas e a diferença entre seus ângulos não serão constantes
+por toda a imagem.
 
 \subsubsection{{\em Probabilistic} Hough {\em Transform}}
 
@@ -395,6 +430,10 @@ cada vaga.
 é uma otimização da transformada clássica de Hough. Não leva todos os pontos em consideração,
 em vez disso, toma apenas um subconjunto aleatório de pontos que é suficiente para a detecção
 da linha. Apenas temos que definir o limiar.
+
+	Com esse processamento, podemos obter as linhas das vagas individualmente, ao invés de
+somente a sua orientação. Infelizmente isso vem com o custo de que outras linhas além das faixas
+divisórias das vagas também serão obtidas e usadas no cálculo.
 
 
 %%%	IMAGEM 11	%%%
@@ -424,6 +463,20 @@ dados são então atribuídos a um desses clusters. Mesmo que o método pareça 
 o fato de que pode não ser fácil identificar claramente os elementos K iniciais ou as sementes
 para os clusters.
 
+	Como não sabemos quantos núcleos K se precisaria, foi-se utilizado uma variação deste
+algorítmo. A clusterização K-means adaptativo por limiarização \cite{kmeans}.
+
+
+	K-means foi utilizado para que as linhas retas ou segmentos de retas semelhantes
+geradas pelas transformadas Hough sejam agrupadas. Com isso, a contagem tornou-se
+algo já possível de se enxergar.
+
+	Um impedimento que foi encontrado ao se utilizar esse método é que fazia-se
+necessário existir uma forma de se classificar a similaridade entre duas retas, e de segmentos
+de retas. Esse não é um problema resolvido da matemática e, portanto, existem algumas
+possíveis formas de se ter esse valor computado. Usamos um método próprio e relativamente
+simples discutido a seguir.
+
 
 %%%	IMAGEM 12	%%%
 \begin{figure}[!htb]
@@ -433,28 +486,63 @@ para os clusters.
 \label{fig:retacluster}
 \end{figure}
 
+\subsubsection{Similaridade de retas}
 
-	K-means foi utilizado para que as linhas retas ou segmentos de retas semelhantes
-geradas pelas transformadas Hough sejam agrupadas. Com isso, a contagem tornou-se
-algo já possível de se enxergar.
+	Para a aplicação da clusterização pelo método de K-means, criou-se um algorítmo
+para definir a similaridade entre as retas encontradas pela Transformada Hough. Esse
+algorítmo recebe como entrada duas retas, ou dois segmentos de retas, e retorna um
+número entre 0 a 1 que representa a similaridade entre elas de forma que, 1 significa
+qua são identicas e 0 indica que não são correlacionadas.
+
+	Para que seja uma transformada linear, a função também recebe argumentos que
+representam qual o valor mínimo que alguma diferença pode ser para fazer com que a
+similaridade seja 0. Por exemplo, duas linhas paralelas cuja distância máxima seja 10 pixels
+retornaria $0.2$ de similaridade de a distância entre elas fossem de 8 pixels. A equação abaixo
+representa o cálculo realizado para se computar a similaridade entre retas.
+
+\begin{equation*}
+angleSimilarity = 1 - \dfrac{|\theta_1 - \theta_2|}{\sfrac{\pi}{2}} , \forall \theta \in [0,\sfrac{\pi}{2}]
+\end{equation*}
+\begin{equation*}
+\begin{split}
+distanceSimilarity &= 1 - \dfrac{|\rho_1 - \rho_2|}{maxDistance}, \\
+\forall |\rho_1 - \rho_2| < maxDistance; \\
+&= 0, otherwise
+\end{split}
+\end{equation*}
+\begin{equation}
+similarity = angleSimilarity*distanceSimilarity
+\end{equation}
+
+	A diferença desse algorítimo para o de similaridades entre segmentos de retas é que
+o valor final é multiplicado por um outro $distanceSimilarity$ adicional que computa a distância
+entre o centro de dois segmentos de retas dentro de um limite máximo, assim como o
+demonstrado acima.
 
 %%%	IMAGEM 12	%%%
-\begin{figure}[!htb]
+\begin{figure}[!htp]
 \centering
 \includegraphics[scale=0.15]{hough-segmentolinhas-cluster.jpg}
  \caption{Segmentos de retas geradas por Hough probabilístico depois da clusterização e filtragem}
 \label{fig:segcluster}
 \end{figure}
 
+\subsection{Filtragem}
 
-\subsubsection{Similaridade de retas}
+	Para se obter um melhor resultados, todas as linhas obtidas foram fitradas. Contudo,
+cada tipo de linha passou por uma filtragem diferente.
 
-	Para a aplicação da clusterização pelo método de K-means, criou-se um algorítmo
-para definir a similaridade entre as retas encontradas pela Trasnformada Hough.
+	As retas obtidas pela transformada de Hough, após serem clusterizadas, foi-se realizado
+uma segunda clusterização sobre os centroides previamente encontrados. Todos esses centroides
+iniciais que ficaram ligados a um novo centroide médio que, ao final do processamento, possuísse
+menos de dois centroides, foram removidos da lista de centroides. O que resulta em somente
+linhas de média que possuem três ou mais similares.
 
-
-
-
+	Já os segmentos de retas obtidos pela transformada probabilística de Hoguh tiveram um
+processamento diferente. Primeiro foi realizado uma filtragem para se remover todo e qualquer
+segmento de reta que não possuísse angulação similar e/ou estivesse acima de 50 pixels distante
+dos centroides encontrados na etapa anterior. Somente nesse ponto, os segmentos de retas
+restantes seriam clusterizados, resultando na Figure \ref{fig:segcluster}.
 
 %%%%%%%%	RESULTADOS
 \section{Resultados}
