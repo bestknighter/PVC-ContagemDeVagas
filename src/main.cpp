@@ -2,7 +2,6 @@
 
 using namespace cv;
 
-
 // Começa GLCM (matriz de homogeneidades)
 
 #define WINDOW_SIZE 32
@@ -30,11 +29,13 @@ Mat ExtractFeatureMat(Mat featuresMat, int featureNum);
 #define DIST_RES 1
 #define ANGLE_RES M_PI/180.
 #define HOUGH_THRES 300 // Acumulador
-#define MIN_LINE_LEN 3.
-#define MAX_LINE_GAP 15.
+#define HOUGHP_THRES 150 // Acumulador
+#define MIN_LINE_LEN 0
+#define MAX_LINE_GAP 25
 #define TAM_DILATA 7 // Pixels
 #define TAM_ERODE 5 // Pixels
 #define TAM_LINE 3000 // Pixels
+#define ANGLE_THRES 0.25*M_PI/180.
 
 // Termina Hough
 
@@ -48,9 +49,15 @@ Mat ExtractFeatureMat(Mat featuresMat, int featureNum);
 std::vector<Vec2f> AKM( std::vector<Vec2f> input, float threshold, float lineMaxDist = LINE_MAX_DIST, unsigned int minLines = 1 );
 std::vector<Vec4i> AKM( std::vector<Vec4i> input, float threshold, float lineMaxDist = LINE_MAX_DIST, unsigned int minLines = 1 );
 void FilterByAKM( std::vector<Vec2f>& input, float threshold, float lineMaxDist = LINE_MAX_DIST, unsigned int minLines = 1 );
-double linesSimilarity( Vec2f lineA, Vec2f lineB, float maxDistance = 50 );
-double linesSimilarity( Vec4i lineA, Vec4i lineB, float maxDistance = 100 );
 // Termina AKM
+
+// Começa Auxiliary Funcs
+
+double linesSimilarity( Vec2f lineA, Vec2f lineB, float maxDistance = 50 );
+double linesSimilarity( Vec4i segLineA, Vec4i segLineB, float maxDistance = 100 );
+Vec2f ConvertSegLineToLine(Vec4i segLine);
+
+// Termina Auxiliary Funcs
 
 int main(int argc, char** argv){
 	if(argc < 2){
@@ -323,6 +330,7 @@ int main(int argc, char** argv){
 		// imshow("Hough - operado", operado);
 		imwrite("./debug-data/morph-operado.jpg", operado);
 
+		std::vector<Vec2f> linesDirections;
 		{ // Acha as linhas por Hough
 			std::vector<Vec2f> lines;
 			HoughLines(operado, lines, DIST_RES, ANGLE_RES, HOUGH_THRES);
@@ -348,6 +356,8 @@ int main(int argc, char** argv){
 			std::vector<Vec2f> clusters = AKM(lines, LINE_THRES);
 			FilterByAKM(clusters, 0.9, 100000, 2);
 
+			linesDirections = clusters;
+
 			Mat houghWithClusteredLines = gray.clone();
 			cvtColor(operado, houghWithClusteredLines, COLOR_GRAY2BGR);
 			for( unsigned int i = 0; i < clusters.size(); i++ ) {
@@ -368,7 +378,7 @@ int main(int argc, char** argv){
 		printf("Hough computado. Calculando Hough probabilistico...\n");
 		{ // Acha os segmentos de linhas por Hough
 			std::vector<Vec4i> segLines;
-			HoughLinesP(operado, segLines, DIST_RES, ANGLE_RES, HOUGH_THRES/2, MIN_LINE_LEN, MAX_LINE_GAP);
+			HoughLinesP(operado, segLines, DIST_RES, ANGLE_RES, HOUGHP_THRES, MIN_LINE_LEN, MAX_LINE_GAP);
 		
 			Mat houghWithLines = Mat::zeros(gray.rows, gray.cols, gray.type());
 			// Mat houghWithLines = operado.clone();
@@ -379,7 +389,20 @@ int main(int argc, char** argv){
 		
 			// imshow("Hough - Segmento de Linhas", houghWithLines);
 			imwrite("./debug-data/hough-segmentolinhas.jpg", houghWithLines);
-		
+
+			for(unsigned int i = 0; i < segLines.size(); i++) {
+				Vec2f lineI = ConvertSegLineToLine(segLines[i]);
+				unsigned int j;
+				for(j = 0; j < linesDirections.size(); j++) {
+					if(linesSimilarity(linesDirections[j], lineI, 1000000) > 0.95) {
+						break;
+					}
+				}
+				if(j >= linesDirections.size()) {
+					segLines.erase(segLines.begin() + i--);
+				}
+			}
+
 			// Compute e desenha a clusterização adaptativa
 			std::vector<Vec4i> clusters = AKM(segLines, SEGLINE_THRES);
 		
@@ -538,19 +561,26 @@ double linesSimilarity(Vec2f lineA, Vec2f lineB, float maxDistance) {
 	return angleSim * (distSim > 0 ? distSim : 0);
 }
 
-double linesSimilarity( Vec4i lineA, Vec4i lineB, float maxDistance ) {
-	double thetaA = 90.*M_PI/180. - std::atan2( std::abs(lineA[2]-lineA[0]), std::abs(lineA[3]-lineA[1]) );
-	double thetaB = 90.*M_PI/180. - std::atan2( std::abs(lineB[2]-lineB[0]), std::abs(lineB[3]-lineB[1]) );
+double linesSimilarity( Vec4i segLineA, Vec4i segLineB, float maxDistance ) {
 
-	Vec2f midA((lineA[0]+lineA[2])/2, (lineA[1]+lineA[3])/2);
-	Vec2f midB((lineB[0]+lineB[2])/2, (lineB[1]+lineB[3])/2);
+	Vec2f midA((segLineA[0]+segLineA[2])/2, (segLineA[1]+segLineA[3])/2);
+	Vec2f midB((segLineB[0]+segLineB[2])/2, (segLineB[1]+segLineB[3])/2);
 
-	double rhoA = midA[0]*std::sin(thetaA) + midA[1]*std::cos(thetaA);
-	double rhoB = midB[0]*std::sin(thetaB) + midB[1]*std::cos(thetaB);
+	Vec2f lineA = ConvertSegLineToLine(segLineA);
+	Vec2f lineB = ConvertSegLineToLine(segLineB);
 
 	double distSim = 1 - std::sqrt( std::pow( midA[0]-midB[0], 2) + std::pow( midA[1]-midB[1], 2) )/maxDistance;
 
-	return linesSimilarity(Vec2f(rhoA, thetaA), Vec2f(rhoB, thetaB), maxDistance) * (distSim > 0 ? distSim : 0);
+	return linesSimilarity(lineA, lineB, maxDistance) * (distSim > 0 ? distSim : 0);
+}
+
+Vec2f ConvertSegLineToLine(Vec4i segLine) {
+	Point mid((segLine[0]+segLine[2])/2, (segLine[1]+segLine[3])/2);
+
+	float theta = std::atan2( segLine[3]-segLine[1], segLine[2]-segLine[0] ) + 90*M_PI/180;
+	float rho = mid.x*std::cos(theta) + mid.y*std::sin(theta);
+
+	return Vec2f(rho, theta);
 }
 
 // Termina AKM
