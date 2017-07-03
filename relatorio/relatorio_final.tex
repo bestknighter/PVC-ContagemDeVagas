@@ -548,6 +548,18 @@ restantes seriam clusterizados, resultando na Figure \ref{fig:segcluster}.
 %%%%%%%%	RESULTADOS
 \section{Resultados}
 
+\paragraph{Paralelização}
+	O código desse projeto foi implementado de forma completamente monolítica e sequencial,
+entretanto, ele é extremamente paralelizável. Isso se deve ao fato de que, de todos os processamentos
+realizados, somente um deles depende dos resultados obtidos por outros procedimentos pesados.
+Essa etapa é a da filtragem e clusterização que é relativamente rápida mas depende da transformada
+probabilística de Hough (que devido aos parâmetros e condições da imagem, podem levar até um minuto
+para ser computados).
+
+\paragraph{Oclusões}
+	Uma desvantagem da técnica desenvolvida é sua falta de robustez com relação a oclusões.
+Todo e qualquer tipo de oclusão pode alterar o resultado obtido. Sejam árvores, pessoas ou até
+mesmo carros. 
 
 
 %%%%%%%%	CONCLUSÕES
