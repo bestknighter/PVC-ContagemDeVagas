@@ -276,11 +276,15 @@ checar essa matriz final na posição $(1,1)$.
 \begin{figure}[!htb]
 \minipage{0.475\linewidth}
   \includegraphics[width=\linewidth]{GLCM0-Homogeneidade.jpg}
+<<<<<<< HEAD
   \caption{GLCM $30\degree$}\label{fig:glcm0}
+=======
+  \caption{GLCM $3\angle 0^{\circ}$}\label{fig:glcm0}
+>>>>>>> 5d5723bd094140aa17bbfae29aaf1a1c593a0f6a
 \endminipage\hfill
 \minipage{0.475\linewidth}
   \includegraphics[width=\linewidth]{GLCM45-Homogeneidade.jpg}
-  \caption{GLCM $45^{\circ}$}\label{fig:glcm45}
+  \caption{GLCM $3\angle 45^{\circ}$}\label{fig:glcm45}
 \endminipage
 \end{figure}
 
@@ -288,11 +292,11 @@ checar essa matriz final na posição $(1,1)$.
 \begin{figure}[!htb]
 \minipage{0.475\linewidth}
   \includegraphics[width=\linewidth]{GLCM90-Homogeneidade.jpg}
-  \caption{GLCM $3\angle 90º$}\label{fig:glcm90}
+  \caption{GLCM $3\angle 90^{\circ}$}\label{fig:glcm90}
 \endminipage\hfill
 \minipage{0.475\linewidth}
   \includegraphics[width=\linewidth]{GLCM135-Homogeneidade.jpg}
-  \caption{GLCM $3\angle 135º$}\label{fig:glcm135}
+  \caption{GLCM $3\angle 135^{\circ}$}\label{fig:glcm135}
 \endminipage
 \end{figure}
 
@@ -548,6 +552,18 @@ restantes seriam clusterizados, resultando na Figure \ref{fig:segcluster}.
 %%%%%%%%	RESULTADOS
 \section{Resultados}
 
+\paragraph{Paralelização}
+	O código desse projeto foi implementado de forma completamente monolítica e sequencial,
+entretanto, ele é extremamente paralelizável. Isso se deve ao fato de que, de todos os processamentos
+realizados, somente um deles depende dos resultados obtidos por outros procedimentos pesados.
+Essa etapa é a da filtragem e clusterização que é relativamente rápida mas depende da transformada
+probabilística de Hough (que devido aos parâmetros e condições da imagem, podem levar até um minuto
+para ser computados).
+
+\paragraph{Oclusões}
+	Uma desvantagem da técnica desenvolvida é sua falta de robustez com relação a oclusões.
+Todo e qualquer tipo de oclusão pode alterar o resultado obtido. Sejam árvores, pessoas ou até
+mesmo carros. 
 
 
 %%%%%%%%	CONCLUSÕES
