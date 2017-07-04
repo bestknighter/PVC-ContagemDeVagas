@@ -1,3 +1,6 @@
+#include <cstdlib>
+#include <ctime>
+
 #include <opencv2/opencv.hpp>
 
 using namespace cv;
@@ -38,7 +41,7 @@ Mat ExtractFeatureMat(Mat featuresMat, int featureNum);
 
 // Termina Hough
 
-// Começa AKM
+// Começa KM
 
 #define SENSIBILITY 5.
 #define LINE_THRES 0.5
@@ -48,8 +51,9 @@ Mat ExtractFeatureMat(Mat featuresMat, int featureNum);
 std::vector<Vec2f> AKM( std::vector<Vec2f> input, float threshold, float lineMaxDist = LINE_MAX_DIST, unsigned int minLines = 1 );
 std::vector<Vec4i> AKM( std::vector<Vec4i> input, float threshold, float lineMaxDist = LINE_MAX_DIST, unsigned int minLines = 1 );
 void FilterByAKM( std::vector<Vec2f>& input, float threshold, float lineMaxDist = LINE_MAX_DIST, unsigned int minLines = 1 );
+std::vector<int> KM( std::vector<Vec2f> lines, int meansAmount );
 
-// Termina AKM
+// Termina KM
 
 // Começa detecção final
 
@@ -85,6 +89,8 @@ int main(int argc, char** argv){
 		printf("Falha ao abrir a imagem.\n");
 		exit(1);
 	}
+
+	std::srand(std::time(0));
 
 	img.convertTo(img, CV_32F, 1/255.0);
 	
@@ -329,6 +335,7 @@ int main(int argc, char** argv){
 
 	std::vector<float> homogeneidades;
 	Mat pixelsToCheck;
+	std::vector<Vec2f> clusters;
 
 	// Começa Hough
 
@@ -371,7 +378,7 @@ int main(int argc, char** argv){
 			imwrite("./debug-data/hough-linhas.jpg", houghWithLines);
 
 			// Compute a clusterização adaptativa
-			std::vector<Vec2f> clusters = AKM(lines, LINE_THRES);
+			clusters = AKM(lines, LINE_THRES);
 			FilterByAKM(clusters, 0.9, 100000, 2); // Remove medias com menos de 2 ocorrencias
 
 			linesDirections = clusters;
@@ -497,7 +504,10 @@ int main(int argc, char** argv){
 		}
 		float percPeek = ( (float)peek - HOM_OCCUPIED*(hist.size()-1) ) / (float)( HOM_VACANT*(hist.size()-1) - HOM_OCCUPIED*(hist.size()-1) );
 		percPeek = 1 - (percPeek > 0 ? (percPeek < 1 ? percPeek : 1) : 0);
-		printf("%f%% ocupado (contagem)\tou %f%% ocupado (pico)\n", (float)100*larger/total, 100*percPeek);
+		std::vector<int> qtdLinhas = KM(clusters, 2);
+		printf("Pronto!\n---------------------------------------------------------\n");
+		printf("Encontramos %d vagas.\nEstimamos que esteja entre %.1f%% e %.1f%% ocupado\n", (qtdLinhas[0]-1)*(qtdLinhas[1]-1), (float)100*larger/total, 100*percPeek);
+		printf("---------------------------------------------------------\n");
 		Mat histImg(HIST_VSIZE+1, HIST_RES+1, CV_8UC1);
 		for(int j = 0; j < histImg.rows; j++) {
 			int vertPos = (max+1)*(1 - ( (float)j/(histImg.rows-1) ));
@@ -510,8 +520,6 @@ int main(int argc, char** argv){
 
 	// Termina detecao de ocupacao
 
-	waitKey(0);
-	printf("Pronto!\n");
 	return 0;
 }
 
@@ -531,7 +539,7 @@ Mat ExtractFeatureMat(Mat featuresMat, int featureNum) {
 
 // Termina GLCM
 
-// Começa AKM
+// Começa KM
 
 std::vector<Vec2f> AKM( std::vector<Vec2f> input, float threshold, float lineMaxDist, unsigned int minLines ) {
 	if(input.size() < 1) {
@@ -646,6 +654,47 @@ void FilterByAKM( std::vector<Vec2f>& input, float threshold, float lineMaxDist,
 	}
 }
 
+std::vector<int> KM( std::vector<Vec2f> lines, int meansAmount ) {
+	std::vector<int> amount(meansAmount, 0);
+	std::vector<Vec2f> means(meansAmount);
+	for(int i = 0; i < meansAmount; i++) {
+		means[i] = Vec2f(rand()%1000, M_PI*rand()/(2*RAND_MAX));
+	}
+	for(unsigned int i = 0; i < lines.size(); i++) {
+		int closestK = 0;
+		double biggestSimilarity = 0.;
+		for(int k = 0; k < meansAmount; ++k) { // Acha media mais proxima
+			double similarity = linesSimilarity(lines[i], means[k], 1000000); // Com distanca de 1,000,000 o algoritmo depende somente do angulo
+			if(similarity > biggestSimilarity) {
+				biggestSimilarity = similarity;
+				closestK = k;
+			}
+		}
+		Vec2f oldMean = means[closestK] * ((float)amount[closestK]++);
+		means[closestK] = (oldMean + lines[i])/((float)amount[closestK]);
+	}
+
+	amount = std::vector<int>(meansAmount, 0); // Calcula pela segunda vez mas usando as medias encontradas anteriormente como medias iniciais
+	for(unsigned int i = 0; i < lines.size(); i++) {
+		int closestK = 0;
+		double biggestSimilarity = 0.;
+		for(int k = 0; k < meansAmount; ++k) {
+			double similarity = linesSimilarity(lines[i], means[k], 1000000);
+			if(similarity > biggestSimilarity) {
+				biggestSimilarity = similarity;
+				closestK = k;
+			}
+		}
+		Vec2f oldMean = means[closestK] * ((float)amount[closestK]++);
+		means[closestK] = (oldMean + lines[i])/((float)amount[closestK]);
+	}
+	return amount;
+}
+
+// Termina KM
+
+// Começa Auxiliary Funcs
+
 double linesSimilarity(Vec2f lineA, Vec2f lineB, float maxDistance) {
 	double angleSim = 1 - std::abs(lineA[1] - lineB[1])/(M_PI/2);
 	double distSim = 1 - std::abs(lineA[0] - lineB[0])/maxDistance;
@@ -683,4 +732,4 @@ std::vector<int> Histogram(std::vector<float> vec, int resolution) {
 	return hist;
 }
 
-// Termina AKM
+// Termina Auxiliary Funcs

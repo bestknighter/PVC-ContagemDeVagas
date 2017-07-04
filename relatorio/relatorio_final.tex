@@ -100,8 +100,8 @@ de vagas na área da visão computacional sem a utilização de inteligência ar
 menores. Com isso, é bastante notório que o processo de contagem de vagas em um
 estacionamento tem uma grande abrangência no campo de estudos, não apenas da
 visão computacional. Técnicas como análise de texturas, detecção de gradiente,
-processamentos morfológicos, extração
-de características e clusterização estão bem presentes neste trabalho.
+processamentos morfológicos, extração de características, clusterização e operações
+com histogramas estão bem presentes neste trabalho.
 
 	As tarefas realizadas envolvem desde abrir uma imagem simples do tipo \verb'BGR'
 até as mais diversas técnicas para o desenvolvimento de uma solução da problemática.
@@ -145,13 +145,18 @@ duas retas. Dos algorítmos pré-existentes que foram utilizados, o procedimento
 \item [Etapa 2] Calcula-se diversas matrizes GLCM's;
 \item [Etapa 3] Aplica-se o algorítmo {\em Sobel Detector}{\footnotesize \cite{sobel1}};
 \item [Etapa 4] A partir de Sobel, aplica-se {\em Hough Line Transform};
-\item [Etapa 5] A partir de Sobel, calcula-se a Transformada Probabilística de Hough.
+\item [Etapa 5] A partir de Sobel, calcula-se a Transformada Probabilística de Hough;
+\item [Etapa 6] As retas obtidas na etapa 4 são clusterizadas e filtradas;
+\item [Etapa 7] Os segmentos de retas obtidos na etapa 5 são filtradas e clusterizadas de acordo com o obtido na etapa 6;
+\item [Etapa 8] Calcula a máscara da região a ser processada;
+\item [Etapa 9] Obtem o histograma da homogeneidade na região máscarada;
+\item [Etapa 10] Calcula a ocupação do estacionamento.
 \end{description}
 
 %%%	IMAGEM 1	%%%
 \begin{figure}[!htb]
 \centering
-\includegraphics[scale=0.6]{introducao.png}
+\includegraphics[width=\columnwidth]{introducao.png}
 \caption{Diagrama em árvore da ordem e disposição das etapas realizadas}
 \label{fig:intro}
 \end{figure}
@@ -167,7 +172,7 @@ duas retas. Dos algorítmos pré-existentes que foram utilizados, o procedimento
 %%%	IMAGEM 2	%%%
 \begin{figure}[!htb]
 \centering
-\includegraphics[scale=0.15]{estacionamento.jpg}
+\includegraphics[width=\columnwidth]{estacionamento.jpg}
 \caption{Imagem original de exemplo}
 \label{fig:original}
 \end{figure}
@@ -330,7 +335,7 @@ ao redor do pixel central de algum outro.
 %%%	IMAGEM 8	%%%
 \begin{figure}[!hbp]
 \centering
-\includegraphics[scale=0.15]{sobel-mag.jpg}
+\includegraphics[width=\columnwidth]{sobel-mag.jpg}
 \caption{Matriz magnitude obtida ao realizar a detecção de Sobel}
 \label{fig:sobel}
 \end{figure}
@@ -369,7 +374,7 @@ cinza), gerando imagens mais escuras.
 %%%	IMAGEM 9	%%%
 \begin{figure}[!htb]
 \centering
-\includegraphics[scale=0.15]{morph-operado.jpg}
+\includegraphics[width=\columnwidth]{morph-operado.jpg}
 \caption{Imagem após realizada todos os processamentos morfológicos}
 \label{Rotulo}
 \end{figure}
@@ -406,7 +411,7 @@ a transformada clássica de Hough contém muitas aplicações.
 %%%	IMAGEM 10	%%%
 \begin{figure}[!htb]
 \centering
-\includegraphics[scale=0.15]{hough-linhas.jpg}
+\includegraphics[width=\columnwidth]{hough-linhas.jpg}
 \caption{Retas encontradas pela Transformada de Hough}
 \label{fig:hough}
 \end{figure}
@@ -440,7 +445,7 @@ divisórias das vagas também serão obtidas e usadas no cálculo.
 %%%	IMAGEM 11	%%%
 \begin{figure}[!htb]
 \centering
-\includegraphics[scale=0.15]{hough-segmentolinhas.jpg}
+\includegraphics[width=\columnwidth]{hough-segmentolinhas.jpg}
 \caption{Segmento de Retas encontradas pela Transformada Probabilística de Hough}
 \label{Rotulo}
 \end{figure}
@@ -482,7 +487,7 @@ simples discutido a seguir.
 %%%	IMAGEM 12	%%%
 \begin{figure}[!htb]
 \centering
-\includegraphics[scale=0.15]{hough-linhas-cluster.jpg}
+\includegraphics[width=\columnwidth]{hough-linhas-cluster.jpg}
  \caption{Retas geradas por Hough depois da clusterização e filtragem}
 \label{fig:retacluster}
 \end{figure}
@@ -520,10 +525,10 @@ o valor final é multiplicado por um outro $distanceSimilarity$ adicional que co
 entre o centro de dois segmentos de retas dentro de um limite máximo, assim como o
 demonstrado acima.
 
-%%%	IMAGEM 12	%%%
+%%%	IMAGEM 13	%%%
 \begin{figure}[!htp]
 \centering
-\includegraphics[scale=0.15]{hough-segmentolinhas-cluster.jpg}
+\includegraphics[width=\columnwidth]{hough-segmentolinhas-cluster.jpg}
  \caption{Segmentos de retas geradas por Hough probabilístico depois da clusterização e filtragem}
 \label{fig:segcluster}
 \end{figure}
@@ -544,6 +549,39 @@ processamento diferente. Primeiro foi realizado uma filtragem para se remover to
 segmento de reta que não possuísse angulação similar e/ou estivesse acima de 50 pixels distante
 dos centroides encontrados na etapa anterior. Somente nesse ponto, os segmentos de retas
 restantes seriam clusterizados, resultando na Figure \ref{fig:segcluster}.
+
+\subsection{Mascaramento}
+
+	Usando-se os segmentos de retas filtrados e clusterizados da etapa anterior como imagem,
+foi realizada mais três processamentos morfológicos para se obter a máscara. Duas dilatações
+com tamanhos diferentes que foram salvas em variáveis temporárias e uma subtração da maior
+pela menor. O resultado desta etapa foi uma imagem onde os únicos pixels em branco são os
+que estão relativamente próximo a algum segmento de reta obtido. A figura \ref{fig:mask} monstra
+como é o resultado obtido nesta etapa.
+
+%%%	IMAGEM 14	%%%
+\begin{figure}[!hbp]
+\centering
+\includegraphics[width=\columnwidth]{area-checagem.jpg}
+ \caption{Mascaramento da imagem}
+\label{fig:mask}
+\end{figure}
+
+\subsection{Histogramização}
+
+	Criou-se um vetor que armazenada todas as homogeneidades médias, ou seja, a média
+das homogeneidades obtidas pelas matrizes GLCM $0\degree$, $45\degree$, $90\degree$ e
+$135\degree$ para cada pixel, onde só eram adicionados nesse vetor as homogeneidades
+médias cujas janelas para sua computação estivesse completamente dentro da máscara obtida.
+Desta forma, este vetor possuia somente as homogeneidades computadas em posições relevantes.
+
+%%%	IMAGEM 15	%%%
+\begin{figure}[!htp]
+\centering
+\includegraphics[width=0.33\columnwidth]{hist-ocupacao.jpg}
+ \caption{Histograma obtido para a imagem de exemplo}
+\label{fig:hist}
+\end{figure}
 
 %%%%%%%%	RESULTADOS
 \section{Resultados}
