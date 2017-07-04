@@ -554,24 +554,21 @@ entretanto, ele é extremamente paralelizável. Isso se deve ao fato de que, de 
 realizados, somente um deles depende dos resultados obtidos por outros procedimentos pesados.
 Essa etapa é a da filtragem e clusterização que é relativamente rápida mas depende da transformada
 probabilística de Hough (que devido aos parâmetros e condições da imagem, podem levar até um minuto
-para ser computados).
+para ser computado).
 
 \paragraph{Oclusões}
 	Uma desvantagem da técnica desenvolvida é sua falta de robustez com relação a oclusões.
 Todo e qualquer tipo de oclusão pode alterar o resultado obtido. Sejam árvores, pessoas ou até
-mesmo carros. 
+mesmo carros.
 
 
 %%%%%%%%	CONCLUSÕES
 \section{Conclusões}
 	Ao final desse projeto, percebeu-se que esta técnica é inviável, a não ser que seja utilizado
-algum processamento para dar resistência a oclusões. Além de que, é necessário se criar 
-
-
-
-
-
-
+algum processamento para dar resistência a oclusões. Além de que, é necessário se criar algum
+procedimento para se calcular e segmentar as vagas pois, da forma atual, está sendo computado
+a homogeneidade dos pixels próximos aos segmentos de retas detectadas e, através do uso de
+histograma, comparando-se os picos e se obtendo a relação ocupado/desocupado.
 
 
 

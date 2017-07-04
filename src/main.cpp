@@ -48,7 +48,20 @@ Mat ExtractFeatureMat(Mat featuresMat, int featureNum);
 std::vector<Vec2f> AKM( std::vector<Vec2f> input, float threshold, float lineMaxDist = LINE_MAX_DIST, unsigned int minLines = 1 );
 std::vector<Vec4i> AKM( std::vector<Vec4i> input, float threshold, float lineMaxDist = LINE_MAX_DIST, unsigned int minLines = 1 );
 void FilterByAKM( std::vector<Vec2f>& input, float threshold, float lineMaxDist = LINE_MAX_DIST, unsigned int minLines = 1 );
+
 // Termina AKM
+
+// Começa detecção final
+
+#define PIX_DISTANCE 50
+#define PIX_WIDTH 90 // Tem que ser sempre menor que PIX_DISTANCE*2
+#define ACC_THRES WINDOW_SIZE*WINDOW_SIZE
+#define HIST_RES 100
+#define HIST_VSIZE 200
+
+std::vector<int> Histogram(std::vector<float> vec, int resolution);
+
+// Termina detecção final
 
 // Começa Auxiliary Funcs
 
@@ -312,13 +325,16 @@ int main(int argc, char** argv){
 
 	printf("GLCMs computadas. Calculando Transformada de Hough...\n");
 
+	std::vector<float> homogeneidades;
+	Mat pixelsToCheck;
+
 	// Começa Hough
 
 	{
 		// Binariza
 		Mat binarizado, gray, operado;
 		cvtColor(mag, gray, COLOR_BGR2GRAY);
-		threshold(gray, binarizado, BIN_THRES, 255, THRESH_BINARY/100);
+		threshold(gray, binarizado, BIN_THRES, 255, THRESH_BINARY);
 		binarizado.convertTo(binarizado, CV_8UC1);
 		// imshow("Hough - binarizado", binarizado);
 		imwrite("./debug-data/binarizado.jpg", binarizado);
@@ -409,19 +425,85 @@ int main(int argc, char** argv){
 			// Compute e desenha a clusterização adaptativa
 			std::vector<Vec4i> clusters = AKM(segLines, SEGLINE_THRES, 100);
 		
-			Mat houghWithClusteredLines = Mat::zeros(gray.rows, gray.cols, gray.type());
+			Mat houghWithClusteredLines = Mat::zeros(gray.rows, gray.cols, CV_8U);
 			// Mat houghWithClusteredLines = operado.clone();
 			cvtColor(houghWithClusteredLines, houghWithClusteredLines, COLOR_GRAY2BGR);
 			for( unsigned int i = 0; i < clusters.size(); i++ ) {
 				line( houghWithClusteredLines, Point(clusters[i][0], clusters[i][1]), Point(clusters[i][2], clusters[i][3]), Scalar(0,0,255), 1, 8 );
 			}
-		
+
 			// imshow("Hough - Segmento de Linhas Clusterizado", houghWithClusteredLines);
 			imwrite("./debug-data/hough-segmentolinhas-cluster.jpg", houghWithClusteredLines);
+			
+			cvtColor(houghWithClusteredLines, pixelsToCheck, COLOR_BGR2GRAY);
+			Mat aux1, aux2;
+			morphologyEx(pixelsToCheck, aux1, MORPH_DILATE, getStructuringElement( MORPH_ELLIPSE, Size(PIX_DISTANCE+PIX_WIDTH/2, PIX_DISTANCE+PIX_WIDTH/2) ));
+			morphologyEx(pixelsToCheck, aux2, MORPH_DILATE, getStructuringElement( MORPH_ELLIPSE, Size(PIX_DISTANCE-PIX_WIDTH/2, PIX_DISTANCE-PIX_WIDTH/2) ));
+			pixelsToCheck = aux1-aux2;
+			threshold(pixelsToCheck, pixelsToCheck, 1, 255, THRESH_BINARY);
+			imwrite("./debug-data/area-checagem.jpg", pixelsToCheck);
 		}
 	}
 
 	// Termina Hough
+
+	printf("Hough probabilistico pronto. Computando ocupacao...\n");
+
+	// Comeca deteccao de ocupacao
+
+	{
+		Mat h0 = ExtractFeatureMat(featuresMatGLCM0, 0);
+		Mat h45 = ExtractFeatureMat(featuresMatGLCM45, 0);
+		Mat h90 = ExtractFeatureMat(featuresMatGLCM90, 0);
+		Mat h135 = ExtractFeatureMat(featuresMatGLCM135, 0);
+		for(int j = 0 ; j < pixelsToCheck.rows-WINDOW_SIZE; j+=Y_STEP) {
+			for(int i = 0; i < pixelsToCheck.cols-WINDOW_SIZE; i+=X_STEP) {
+				bool shouldCheck = false;
+				int acc = 0;
+				for (int y = j; !shouldCheck && y < j+WINDOW_SIZE; y++) {
+					for (int x = i; !shouldCheck && x < i+WINDOW_SIZE; x++) {
+						if(pixelsToCheck.at<unsigned char>(y,x) == 255) {
+							if(++acc >= ACC_THRES) {
+								shouldCheck = true;
+							}
+						}
+					}
+				}
+				if(shouldCheck) {
+					float h = h0.at<float>(j/Y_STEP, i/X_STEP)/4 + h45.at<float>(j/Y_STEP, i/X_STEP)/4
+								+ h90.at<float>(j/Y_STEP, i/X_STEP)/4 + h135.at<float>(j/Y_STEP, i/X_STEP)/4;
+					homogeneidades.emplace_back(h);
+				}
+			}
+		}
+
+		std::vector<int> hist = Histogram(homogeneidades, HIST_RES);
+		int max = 0;
+		int total = 0;
+		int larger = 0;
+		int peek;
+		for (unsigned int i = 0; i < hist.size(); i++) {
+			total += hist[i];
+			if(hist[i] > max) {
+				max = hist[i];
+				peek = i;
+				larger = 0;
+			} else {
+				larger += hist[i];
+			}
+		}
+		printf("%f%% ocupado (contagem)\tou %f%% ocupado (pico)\n", (float)100*larger/total, 100*(1-( (float)peek/(HIST_RES+1)) ));
+		Mat histImg(HIST_VSIZE+1, HIST_RES+1, CV_8UC1);
+		for(int j = 0; j < histImg.rows; j++) {
+			int vertPos = (max+1)*(1 - ( (float)j/(histImg.rows-1) ));
+			for(int i = 0; i < histImg.cols; i++) {
+				histImg.at<unsigned char>(j,i) = 255*( vertPos <= hist[i] );
+			}
+		}
+		imwrite("./debug-data/hist-ocupacao.jpg", histImg);
+	}
+
+	// Termina detecao de ocupacao
 
 	waitKey(0);
 	printf("Pronto!\n");
@@ -586,6 +668,14 @@ Vec2f ConvertSegLineToLine(Vec4i segLine) {
 	float rho = mid.x*std::cos(theta) + mid.y*std::sin(theta);
 
 	return Vec2f(rho, theta);
+}
+
+std::vector<int> Histogram(std::vector<float> vec, int resolution) {
+	std::vector<int> hist(resolution+1, 0);
+	for(unsigned int i = 0; i < vec.size(); i++) {
+		hist[vec[i]*resolution]++;
+	}
+	return hist;
 }
 
 // Termina AKM
