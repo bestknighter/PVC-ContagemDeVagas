@@ -583,8 +583,44 @@ Desta forma, este vetor possuia somente as homogeneidades computadas em posiçõ
 \label{fig:hist}
 \end{figure}
 
+\subsection{Computação da Ocupação}
+
+	Nessa etapa, computa-se dois valores simultaneamente. Quantas vagas existem e o quanto
+do estacionamento está ocupado. Os valores não são exatos, são somente estimativas.
+
+	Para calcular quantas vagas foram encontradas, usamos as retas clusterizadas e filtradas
+encontradas. A os reunimos através de uma clusterização de k-médias simples, ou seja, não
+adapatativo, e informando 2 como a quantidade de médias desejadas. Então, multiplicamos
+a quantidade de retas subtraído por um que uma média foi associada pela mesma medição da
+outra média.
+
+	Para se obter a estimativa de ocupação do estacionamento, procuramos pelo valor de
+homogeneidade de maior ocorrência com o auxílio do histograma. Partimos também do
+pressuposto que um estacionamento vazio não possui homogeneidade de 1 mas sim algum
+valor menor, e que um estacionamento lotado não possui homogeneidade de 0 mas sim de
+algum valor maior. Neste ponto, tivemos duas abordagens, uma de calcular a distância deste
+pico do histograma para os extremos de homogeneidade possíveis de classificar como uma
+porcentagem. A outra forma de se calcular a porcentagem de ocupação foi computar quantas
+ocorrências de homogeneidade foram encontradas depois do pico e dividir esse valor pela
+quantidade total de homogeneidade sendo computados.
+
 %%%%%%%%	RESULTADOS
 \section{Resultados}
+
+	A figura \ref{fig:results} exibe os resultados que obtivemos para o teste de exemplo
+usado ao longo deste relatório. Ao se realizar uma contagem manual das vagas, encontramos
+58 vagas (4 não visíveis, 2 parcialmente visíveis e 52 perfeitamente visíveis) sendo que dessas
+58 vagas, 4 estão ocupadas. Isso resulta em uma ocupação de $6.89\%$ se considerarmos
+todas as vagas, $7.4\%$ se considerarmos somente as visíveis e $7.69\%$ se considerarmos
+somente as vagas perfeitamente visíveis.
+
+%%%	IMAGEM 16	%%%
+\begin{figure}[!htp]
+\centering
+\includegraphics[width=\columnwidth]{results.png}
+ \caption{Print do console ao exucatar aplicação desenvolvida}
+\label{fig:results}
+\end{figure}
 
 \paragraph{Paralelização}
 	O código desse projeto foi implementado de forma completamente monolítica e sequencial,
@@ -597,16 +633,25 @@ para ser computado).
 \paragraph{Oclusões}
 	Uma desvantagem da técnica desenvolvida é sua falta de robustez com relação a oclusões.
 Todo e qualquer tipo de oclusão pode alterar o resultado obtido. Sejam árvores, pessoas ou até
-mesmo carros.
-
+mesmo carros. Além do fato de que, vagas com marcações, como por exemplo vagas para deficientes,
+vagas reservadas, vagas para idosos, e afins, inflam nem que parcialmente o resultado da ocupação
+do estacionamento mesmo se estiverem desocupadas.
 
 %%%%%%%%	CONCLUSÕES
 \section{Conclusões}
-	Ao final desse projeto, percebeu-se que esta técnica é inviável, a não ser que seja utilizado
-algum processamento para dar resistência a oclusões. Além de que, é necessário se criar algum
-procedimento para se calcular e segmentar as vagas pois, da forma atual, está sendo computado
-a homogeneidade dos pixels próximos aos segmentos de retas detectadas e, através do uso de
-histograma, comparando-se os picos e se obtendo a relação ocupado/desocupado.
+
+	Considerando-se que houve a computação da ocupação de vagas em alguns poucos pontos
+fora do estacionamento e a baixa resistência a oclusões, podemos afirmar que a precisão do
+procedimento desenvolvido não é boa para se afirmar com segurança o valor encontrado, mas
+ainda assim o resultado foi de agrado, pois permitiu ter pelo menos uma estimativa de certa forma
+próxima aos valores reais.
+
+	Ao final desse projeto, percebeu-se que esta técnica é inviável para ser usada em casos que
+exigem precisão, a não ser que seja utilizado algum processamento para dar resistência a oclusões.
+Além de que, é necessário se criar algum procedimento para se calcular e segmentar as vagas pois,
+da forma atual, está sendo computado a homogeneidade dos pixels próximos aos segmentos de retas
+detectadas e, através do uso de histograma, comparando-se os picos e se obtendo a relação
+ocupado/desocupado. E acredita-se que sejam esses os pontos que mais prejudicam a precisão dos cálculos.
 
 
 
