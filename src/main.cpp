@@ -58,6 +58,8 @@ void FilterByAKM( std::vector<Vec2f>& input, float threshold, float lineMaxDist 
 #define ACC_THRES WINDOW_SIZE*WINDOW_SIZE
 #define HIST_RES 100
 #define HIST_VSIZE 200
+#define HOM_OCCUPIED 0.2
+#define HOM_VACANT 0.8
 
 std::vector<int> Histogram(std::vector<float> vec, int resolution);
 
@@ -483,16 +485,19 @@ int main(int argc, char** argv){
 		int larger = 0;
 		int peek;
 		for (unsigned int i = 0; i < hist.size(); i++) {
-			total += hist[i];
+			if(HOM_OCCUPIED*(hist.size()-1) <= i && i <= HOM_VACANT*(hist.size()-1) ) {
+				total += hist[i];
+				larger += hist[i];
+			}
 			if(hist[i] > max) {
 				max = hist[i];
 				peek = i;
 				larger = 0;
-			} else {
-				larger += hist[i];
 			}
 		}
-		printf("%f%% ocupado (contagem)\tou %f%% ocupado (pico)\n", (float)100*larger/total, 100*(1-( (float)peek/(HIST_RES+1)) ));
+		float percPeek = ( (float)peek - HOM_OCCUPIED*(hist.size()-1) ) / (float)( HOM_VACANT*(hist.size()-1) - HOM_OCCUPIED*(hist.size()-1) );
+		percPeek = 1 - (percPeek > 0 ? (percPeek < 1 ? percPeek : 1) : 0);
+		printf("%f%% ocupado (contagem)\tou %f%% ocupado (pico)\n", (float)100*larger/total, 100*percPeek);
 		Mat histImg(HIST_VSIZE+1, HIST_RES+1, CV_8UC1);
 		for(int j = 0; j < histImg.rows; j++) {
 			int vertPos = (max+1)*(1 - ( (float)j/(histImg.rows-1) ));
