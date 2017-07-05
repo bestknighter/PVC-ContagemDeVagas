@@ -51,7 +51,7 @@ Mat ExtractFeatureMat(Mat featuresMat, int featureNum);
 std::vector<Vec2f> AKM( std::vector<Vec2f> input, float threshold, float lineMaxDist = LINE_MAX_DIST, unsigned int minLines = 1 );
 std::vector<Vec4i> AKM( std::vector<Vec4i> input, float threshold, float lineMaxDist = LINE_MAX_DIST, unsigned int minLines = 1 );
 void FilterByAKM( std::vector<Vec2f>& input, float threshold, float lineMaxDist = LINE_MAX_DIST, unsigned int minLines = 1 );
-std::vector<int> KM( std::vector<Vec2f> lines, int meansAmount );
+std::vector<int> KM( std::vector<Vec2f> lines, unsigned int meansAmount );
 
 // Termina KM
 
@@ -490,7 +490,7 @@ int main(int argc, char** argv){
 		int max = 0;
 		int total = 0;
 		int larger = 0;
-		int peek;
+		int peek = 0;
 		for (unsigned int i = 0; i < hist.size(); i++) {
 			if(HOM_OCCUPIED*(hist.size()-1) <= i && i <= HOM_VACANT*(hist.size()-1) ) {
 				total += hist[i];
@@ -654,16 +654,16 @@ void FilterByAKM( std::vector<Vec2f>& input, float threshold, float lineMaxDist,
 	}
 }
 
-std::vector<int> KM( std::vector<Vec2f> lines, int meansAmount ) {
+std::vector<int> KM( std::vector<Vec2f> lines, unsigned int meansAmount ) {
 	std::vector<int> amount(meansAmount, 0);
 	std::vector<Vec2f> means(meansAmount);
-	for(int i = 0; i < meansAmount; i++) {
-		means[i] = Vec2f(rand()%1000, M_PI*rand()/(2*RAND_MAX));
+	for(unsigned int i = 0; i < meansAmount && i < lines.size(); i++) {
+		means[i] = lines[i];
 	}
 	for(unsigned int i = 0; i < lines.size(); i++) {
 		int closestK = 0;
 		double biggestSimilarity = 0.;
-		for(int k = 0; k < meansAmount; ++k) { // Acha media mais proxima
+		for(unsigned int k = 0; k < meansAmount; ++k) { // Acha media mais proxima
 			double similarity = linesSimilarity(lines[i], means[k], 1000000); // Com distanca de 1,000,000 o algoritmo depende somente do angulo
 			if(similarity > biggestSimilarity) {
 				biggestSimilarity = similarity;
@@ -673,12 +673,12 @@ std::vector<int> KM( std::vector<Vec2f> lines, int meansAmount ) {
 		Vec2f oldMean = means[closestK] * ((float)amount[closestK]++);
 		means[closestK] = (oldMean + lines[i])/((float)amount[closestK]);
 	}
-
-	amount = std::vector<int>(meansAmount, 0); // Calcula pela segunda vez mas usando as medias encontradas anteriormente como medias iniciais
+	// Calcula de novo mas sem reinicializar as medias
+	amount = std::vector<int>(meansAmount, 0);
 	for(unsigned int i = 0; i < lines.size(); i++) {
 		int closestK = 0;
 		double biggestSimilarity = 0.;
-		for(int k = 0; k < meansAmount; ++k) {
+		for(unsigned int k = 0; k < meansAmount; ++k) {
 			double similarity = linesSimilarity(lines[i], means[k], 1000000);
 			if(similarity > biggestSimilarity) {
 				biggestSimilarity = similarity;
